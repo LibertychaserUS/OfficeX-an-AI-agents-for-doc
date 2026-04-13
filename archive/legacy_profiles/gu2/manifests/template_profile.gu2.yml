@@ -1,0 +1,113 @@
+schema_version: 1
+template_id: "qut-gu2-2023csx-word-template"
+source_template_docx: "/Users/nihao/Desktop/LoopMart_Presentation/QUT-SQA-HP2R48-GU2-2023CSX-学号-姓名.docx"
+page_setup:
+  page_width_pt: 595.3
+  page_height_pt: 841.9
+  top_margin_pt: 70.9
+  bottom_margin_pt: 70.9
+  left_margin_pt: 70.9
+  right_margin_pt: 70.9
+  header_distance_pt: 42.55
+  footer_distance_pt: 42.55
+  usable_body_width_pt: 453.5
+  usable_body_height_pt: 700.1
+document_defaults:
+  ascii_font: "Times New Roman"
+  hansi_font: "Times New Roman"
+  east_asia_font: "宋体"
+  explicit_default_size_pt: null
+  notes:
+    - "Default run fonts come from docDefaults."
+    - "Default effective size is resolved through styles, not docDefaults alone."
+style_contract:
+  Normal:
+    based_on: null
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "宋体"
+    effective_size_pt: 10.5
+    bold: false
+    alignment: "justify"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 0
+    space_after_pt: 0
+  Plain Text:
+    based_on: "Normal"
+    effective_font:
+      ascii: "宋体"
+      east_asia: "宋体"
+    effective_size_pt: 10.5
+    bold: false
+    alignment: "inherit"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 0
+    space_after_pt: 0
+    notes:
+      - "Size is inherited from Normal and should be resolved through style inheritance."
+  Heading 1:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "黑体"
+    effective_size_pt: 24.0
+    bold: true
+    alignment: "center"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 0
+    space_after_pt: 0
+  Heading 2:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "宋体"
+    effective_size_pt: 16.0
+    bold: true
+    alignment: "left"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 0
+    space_after_pt: 0
+  Subtitle:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "等线 Light"
+    effective_size_pt: 14.0
+    bold: true
+    alignment: "left"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 0
+    space_after_pt: 3.0
+  正文缩进1:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "宋体"
+    effective_size_pt: 12.0
+    bold: false
+    alignment: "inherit"
+    first_line_indent_pt: 24.0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.5
+    space_before_pt: 0
+    space_after_pt: 0
+resolution_rules:
+  - "Resolve direct style properties, basedOn inheritance, and document defaults."
+  - "Use OOXML inspection when python-docx leaves a font or size unresolved."
+  - "Treat per-run or per-paragraph overrides as higher priority than style defaults."

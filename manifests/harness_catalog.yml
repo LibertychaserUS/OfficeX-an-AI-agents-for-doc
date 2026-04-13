@@ -1,0 +1,87 @@
+schema_version: 1
+catalog_id: document-ops-system-harness-catalog
+harnesses:
+  - harness_id: document_ingestion
+    path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/document_ingestion.md
+    kind: ingestion
+    trigger_patterns:
+      - external document intake
+      - baseline import
+    primary_outputs:
+      - imported_inventory
+      - source_classification
+      - boundary_note
+  - harness_id: document_generation
+    path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/document_generation.md
+    kind: generation
+    trigger_patterns:
+      - new managed candidate
+      - structured build from source materials
+    primary_outputs:
+      - build_source
+      - candidate_docx
+      - validation_report
+  - harness_id: document_revision
+    path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/document_revision.md
+    kind: revision
+    trigger_patterns:
+      - review feedback
+      - candidate correction
+    primary_outputs:
+      - live_anchor_snapshot
+      - revision_patch_spec
+      - revised_candidate
+      - revision_audit_report
+  - harness_id: template_alignment
+    path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/template_alignment.md
+    kind: formatting
+    trigger_patterns:
+      - template drift
+      - page geometry mismatch
+    primary_outputs:
+      - layout_preflight
+      - alignment_report
+      - aligned_candidate
+  - harness_id: asset_binding
+    path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/asset_binding.md
+    kind: evidence_binding
+    trigger_patterns:
+      - screenshot mapping
+      - snippet mapping
+      - figure identity
+    primary_outputs:
+      - asset_registry
+      - binding_audit
+  - harness_id: compliance_review
+    path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/compliance_review.md
+    kind: compliance
+    trigger_patterns:
+      - requirements conformance
+      - contract review
+    primary_outputs:
+      - compliance_findings
+      - scope_statement
+      - repair_plan
+  - harness_id: render_audit
+    path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/render_audit.md
+    kind: layout_audit
+    trigger_patterns:
+      - readability risk
+      - pagination risk
+      - renderer drift
+    primary_outputs:
+      - render_findings
+      - residual_risk_note
+      - repair_plan
+  - harness_id: publication_release
+    path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/publication_release.md
+    kind: release
+    trigger_patterns:
+      - canonical promotion
+      - release summary update
+    primary_outputs:
+      - published_manifest
+      - release_summary
+      - trace_update
+notes:
+  - Harnesses are execution playbooks, not hard constraints.

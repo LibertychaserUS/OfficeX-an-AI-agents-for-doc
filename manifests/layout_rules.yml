@@ -1,0 +1,26 @@
+schema_version: 1
+
+paragraph_rules:
+  enforce_effective_style_resolution: true
+  check_alignment: true
+  check_indentation: true
+  check_space_before_after: true
+  check_line_spacing: true
+
+image_rules:
+  enforce_page_fit: true
+  max_width_mode: "usable_page_width"
+  max_height_mode: "remaining_page_height_with_caption"
+  caption_must_be_adjacent: true
+  allow_keep_with_next_patch: true
+  allow_keep_lines_patch: true
+  appendix_full_resolution_policy: "fit_to_page_width"
+
+warning_policy:
+  image_overflow_risk: "warning"
+  caption_detached_from_image: "warning"
+  style_mismatch: "warning"
+  unresolved_effective_style: "warning"
+
+notes:
+  - "Current final report does not exhibit the known oversized-image problem, but the scaffold must guard against it generically."

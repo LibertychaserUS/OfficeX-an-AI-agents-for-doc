@@ -1,0 +1,50 @@
+schema_version: 1
+bootstrap_id: document-ops-system-bootstrap
+read_order:
+  - stage: platform_identity
+    files:
+      - path: /Users/nihao/Documents/Playground/document-ops-system/PROJECT.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/AGENTS.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/ACTIVE_RULES_AND_PATHS.md
+  - stage: active_governance
+    files:
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/CONSTRAINT_INDEX.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/WORKFLOW_OPERATING_MODEL.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/ARCHITECTURE.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_DOCX_MVP_BLUEPRINT.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_IMPLEMENTATION_STACK.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_MEMORY_ARCHITECTURE.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_RUNTIME_CONSTITUTION.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/REVIEW_ANCHOR_PROTOCOL.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/VISUAL_AUDIT_REQUIREMENTS.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/OPEN_SOURCE_EDITOR_EVALUATION.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/PRODUCT_ROADMAP.md
+  - stage: prompt_runtime
+    files:
+      - path: /Users/nihao/Documents/Playground/document-ops-system/prompts/OFFICEX_COGNITION.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/prompts/ORCHESTRATOR.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/prompts/TEMPLATE_ANALYST.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/prompts/PATCH_ENGINEER.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/prompts/STYLE_LAYOUT_ENGINEER.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/prompts/VALIDATION_ENGINEER.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/prompts/TEST_AUDITOR.md
+  - stage: agent_runtime
+    files:
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_AGENT_SYSTEM.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/DOMAIN_AGENT_REGISTRY.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/manifests/agent_catalog.yml
+  - stage: provider_runtime
+    files:
+      - path: /Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/PROVIDER_ADAPTER_CONTRACT.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/manifests/provider_catalog.yml
+  - stage: current_platform_state
+    files:
+      - path: /Users/nihao/Documents/Playground/document-ops-system/trace/REPLAY.md
+      - path: /Users/nihao/Documents/Playground/document-ops-system/trace/CURRENT_STATE.md
+  - stage: harness_reference
+    files:
+      - path: /Users/nihao/Documents/Playground/document-ops-system/harnesses/INDEX.md
+notes:
+  - The active platform should be resumed from local governance and local trace first.
+  - Runtime contracts and runtime CLI surfaces should be read before harness playbooks.
+  - Archived cases are optional reference context and should not be read by default.

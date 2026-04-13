@@ -1,0 +1,31 @@
+schema_version: 1
+template_id: "qut-gu2-2023csx-word-template"
+paragraph_position_rules:
+  default_body_alignment: "justify"
+  stage_heading_alignment: "center"
+  section_heading_alignment: "left"
+  indented_body_first_line_indent_pt: 24.0
+  subtitle_space_after_pt: 3.0
+  indented_body_line_spacing_multiple: 1.5
+image_layout_rules:
+  enforce_fit_within_usable_body_width: true
+  usable_body_width_pt: 453.5
+  usable_body_height_pt: 700.1
+  reserve_caption_space_pt: 48.0
+  reserve_bottom_buffer_pt: 24.0
+  image_max_height_formula: "usable_body_height_pt - reserve_caption_space_pt - reserve_bottom_buffer_pt"
+  require_caption_nearby: true
+  caption_search_window_paragraphs:
+    backward: 3
+    forward: 1
+  keep_with_next_for_image_caption_pairs: true
+  warn_if_image_exceeds_page_body: true
+run_override_rules:
+  allow_explicit_run_override: true
+  require_override_audit: true
+  notes:
+    - "A run-level font or size override is allowed only if it is intentionally auditable."
+cover_page_rules:
+  allow_template_specific_manual_positions: true
+  notes:
+    - "Cover-page title blocks may need paragraph-level inspection in addition to style-level enforcement."

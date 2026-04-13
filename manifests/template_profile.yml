@@ -1,0 +1,115 @@
+schema_version: 1
+template_id: "officex-docx-mvp-template"
+source_template_docx: "/Users/nihao/Documents/Playground/document-ops-system/imports/samples/officex_docx_mvp_template.docx"
+page_setup:
+  page_width_pt: 595.3
+  page_height_pt: 841.9
+  top_margin_pt: 70.9
+  bottom_margin_pt: 70.9
+  left_margin_pt: 70.9
+  right_margin_pt: 70.9
+  header_distance_pt: 42.55
+  footer_distance_pt: 42.55
+  usable_body_width_pt: 453.5
+  usable_body_height_pt: 700.1
+document_defaults:
+  ascii_font: "Times New Roman"
+  hansi_font: "Times New Roman"
+  east_asia_font: "Times New Roman"
+  explicit_default_size_pt: 11.0
+  notes:
+    - "This is the neutral OfficeX docx MVP baseline."
+    - "Profile-specific templates may override these defaults."
+style_contract:
+  Normal:
+    based_on: null
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "Times New Roman"
+    effective_size_pt: 11.0
+    bold: false
+    alignment: "justify"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 0
+    space_after_pt: 0
+  Plain Text:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "Times New Roman"
+    effective_size_pt: 11.0
+    bold: false
+    alignment: "inherit"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 0
+    space_after_pt: 0
+    notes:
+      - "This is a neutral plain body style for structure-preserving text."
+  Heading 1:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "Times New Roman"
+    effective_size_pt: 14.0
+    bold: true
+    alignment: "inherit"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 24.0
+    space_after_pt: 0
+    notes:
+      - "The built-in Heading 1 style uses theme fonts; final alignment is controlled by the write contract."
+  Heading 2:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "Times New Roman"
+    effective_size_pt: 13.0
+    bold: true
+    alignment: "inherit"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 10.0
+    space_after_pt: 0
+  Subtitle:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "Times New Roman"
+    effective_size_pt: 14.0
+    bold: true
+    alignment: "left"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.0
+    space_before_pt: 0
+    space_after_pt: 3.0
+  Indented Body:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Times New Roman"
+      east_asia: "Times New Roman"
+    effective_size_pt: 11.0
+    bold: false
+    alignment: "inherit"
+    first_line_indent_pt: 24.0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.5
+    space_before_pt: 0
+    space_after_pt: 0
+resolution_rules:
+  - "Resolve direct style properties, basedOn inheritance, theme defaults, and document defaults."
+  - "Use OOXML inspection when python-docx leaves a font, theme reference, or size unresolved."
+  - "Treat per-run or per-paragraph overrides as higher priority than style defaults."

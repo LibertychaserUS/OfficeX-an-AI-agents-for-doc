@@ -1,0 +1,157 @@
+schema_version: 1
+catalog_id: officex-agent-catalog
+agents:
+  - agent_id: orchestrator
+    display_name: OfficeX Orchestrator
+    runtime_role: orchestrator
+    status: active
+    prompt_roles:
+      - orchestrator
+    domain_pack_candidates:
+      - academic
+      - legal
+      - business
+      - compliance
+      - finance
+      - technical
+      - proposal
+      - project_plan
+    review_pack_candidates: []
+    owned_capabilities:
+      - task understanding
+      - workflow selection
+      - approval mode selection
+      - shared context pack
+      - final merge decisions
+      - publish gate control
+    notes:
+      - Owns runtime orchestration rather than deterministic document mutation.
+  - agent_id: constraint_analyst
+    display_name: Constraint Analyst
+    runtime_role: constraint_analyst
+    status: active
+    prompt_roles:
+      - template_analyst
+    domain_pack_candidates:
+      - academic
+      - legal
+      - business
+      - compliance
+      - finance
+      - technical
+      - proposal
+      - project_plan
+    review_pack_candidates: []
+    owned_capabilities:
+      - template parsing
+      - rubric parsing
+      - brief parsing
+      - hard-vs-soft rule classification
+      - missing requirement detection
+    notes:
+      - Produces normalized constraint sets and escalation notes.
+  - agent_id: writer
+    display_name: Writer
+    runtime_role: writer
+    status: active
+    prompt_roles: []
+    domain_pack_candidates:
+      - academic
+      - legal
+      - business
+      - compliance
+      - finance
+      - technical
+      - proposal
+      - project_plan
+    review_pack_candidates: []
+    owned_capabilities:
+      - section drafting
+      - section rewriting
+      - tone adjustment
+      - bounded content improvement
+    notes:
+      - Dedicated writer prompt pack is deferred; prompt-role binding remains intentionally open.
+  - agent_id: asset_engineer
+    display_name: Asset Engineer
+    runtime_role: asset_engineer
+    status: active
+    prompt_roles:
+      - style_layout_engineer
+    domain_pack_candidates:
+      - business
+      - compliance
+      - finance
+      - technical
+      - proposal
+      - project_plan
+    review_pack_candidates: []
+    owned_capabilities:
+      - chart generation code
+      - table generation inputs
+      - image and diagram generation plans
+      - insertion anchor proposals
+      - caption drafts
+    notes:
+      - Asset generation remains code-first and deterministic-execution-first.
+  - agent_id: patch_assembly_engineer
+    display_name: Patch And Assembly Engineer
+    runtime_role: patch_and_assembly_engineer
+    status: active
+    prompt_roles:
+      - patch_engineer
+      - style_layout_engineer
+    domain_pack_candidates:
+      - academic
+      - legal
+      - business
+      - compliance
+      - finance
+      - technical
+      - proposal
+      - project_plan
+    review_pack_candidates: []
+    owned_capabilities:
+      - patch bundle preparation
+      - deterministic docx execution inputs
+      - numbering updates
+      - bounded merge of approved outputs
+      - style application inputs
+    notes:
+      - Production-desk role bridging AI outputs and deterministic document mutation.
+  - agent_id: validation_review_auditor
+    display_name: Validation And Review Auditor
+    runtime_role: validation_and_review_auditor
+    status: active
+    prompt_roles:
+      - validation_engineer
+      - test_auditor
+    domain_pack_candidates:
+      - academic
+      - legal
+      - business
+      - compliance
+      - finance
+      - technical
+      - proposal
+      - project_plan
+    review_pack_candidates:
+      - general_quality_review
+      - truth_and_fact_review
+      - feasibility_review
+      - professional_language_review
+      - authority_reference_review
+      - legal_wording_review
+      - academic_reference_review
+      - business_feasibility_review
+      - compliance_language_review
+    owned_capabilities:
+      - structure audit
+      - rubric audit
+      - truthfulness audit
+      - professionalism audit
+      - feasibility audit
+      - layout audit
+      - release-readiness judgement
+    notes:
+      - High-risk domain review packs should load here before publish.

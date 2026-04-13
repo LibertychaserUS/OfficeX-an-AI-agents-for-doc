@@ -1,0 +1,176 @@
+schema_version: 1
+catalog_id: document-ops-agent-cli-reference-catalog
+reference_groups:
+  - group_id: official_agent_clis
+    description: Official source-code references for Codex CLI and Claude Code.
+    items:
+      - reference_id: openai_codex_repo
+        authority: official
+        kind: source_repository
+        label: OpenAI Codex
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/openai-codex
+        upstream_url: https://github.com/openai/codex
+        revision: 39cc85310fbb1c4d04034e596cd7420090875799
+        key_entrypoints:
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/openai-codex/AGENTS.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/openai-codex/docs/agents_md.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/openai-codex/docs/skills.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/openai-codex/docs/config.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/openai-codex/docs/sandbox.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/openai-codex/docs/slash_commands.md
+      - reference_id: anthropic_claude_code_repo
+        authority: official
+        kind: source_repository
+        label: Anthropic Claude Code
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/anthropic-claude-code
+        upstream_url: https://github.com/anthropics/claude-code
+        revision: 9772e13f820002c9730af67a2409702799c7ddc6
+        key_entrypoints:
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/anthropic-claude-code/README.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/anthropic-claude-code/plugins/README.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/anthropic-claude-code/examples/settings/README.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/anthropic-claude-code/examples/settings/settings-strict.json
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/anthropic-claude-code/plugins/plugin-dev/skills/agent-development/references/agent-creation-system-prompt.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/official/anthropic-claude-code/plugins/plugin-dev/skills/agent-development/references/system-prompt-design.md
+  - group_id: official_document_runtime_references
+    description: Official source-code references for docx editing, OOXML execution, and collaborative office-like surfaces.
+    items:
+      - reference_id: onlyoffice_documentserver_repo
+        authority: official
+        kind: source_repository
+        label: ONLYOFFICE Docs Community Edition
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/onlyoffice-documentserver
+        upstream_url: https://github.com/ONLYOFFICE/DocumentServer
+        revision: c33a091f5d6102df7a504b925c88574206c3e5d0
+        key_entrypoints:
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/onlyoffice-documentserver/README.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/onlyoffice-documentserver/LICENSE.txt
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/onlyoffice-documentserver/sdkjs
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/onlyoffice-documentserver/web-apps
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/onlyoffice-documentserver/server
+      - reference_id: collabora_online_repo
+        authority: official
+        kind: source_repository
+        label: Collabora Online
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/collabora-online
+        upstream_url: https://github.com/CollaboraOnline/online
+        revision: 04fb4c98131da5d21e3d01a8f99d4b315621e7f8
+        key_entrypoints:
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/collabora-online/README.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/collabora-online/browser
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/collabora-online/wsd
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/collabora-online/test
+      - reference_id: open_xml_sdk_repo
+        authority: official
+        kind: source_repository
+        label: Microsoft Open XML SDK
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/open-xml-sdk
+        upstream_url: https://github.com/dotnet/Open-XML-SDK
+        revision: 40ad85bd5980042b7ba03a570722697b14f12b79
+        key_entrypoints:
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/open-xml-sdk/README.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/open-xml-sdk/docs/Features.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/open-xml-sdk/docs/Diagnostics.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/open-xml-sdk/samples
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/open-xml-sdk/src
+      - reference_id: python_docx_repo
+        authority: official
+        kind: source_repository
+        label: python-docx
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/python-docx
+        upstream_url: https://github.com/python-openxml/python-docx
+        revision: e45454602b53e8e572b179ccf1c91093ec9f4ed7
+        key_entrypoints:
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/python-docx/README.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/python-docx/docs/index.rst
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/python-docx/src
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/python-docx/tests
+      - reference_id: overleaf_repo
+        authority: official
+        kind: source_repository
+        label: Overleaf Community Edition
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/overleaf
+        upstream_url: https://github.com/overleaf/overleaf
+        revision: 3f62eac18130040b5d7c365e106813691961a3ae
+        key_entrypoints:
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/overleaf/README.md
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/overleaf/doc
+          - /Users/nihao/Documents/Playground/document-ops-system/references/document_runtime/official/overleaf/server-ce
+  - group_id: official_docs
+    description: Official documentation URLs used for architecture and memory-system comparisons.
+    items:
+      - reference_id: codex_cli_docs
+        authority: official
+        kind: docs_bundle
+        label: Codex CLI docs
+        upstream_urls:
+          - https://developers.openai.com/codex/cli
+          - https://developers.openai.com/codex/guides/agents-md
+          - https://developers.openai.com/codex/skills
+          - https://developers.openai.com/codex/security
+      - reference_id: claude_code_docs
+        authority: official
+        kind: docs_bundle
+        label: Claude Code docs
+        upstream_urls:
+          - https://code.claude.com/docs/en/overview
+          - https://code.claude.com/docs/en/settings
+          - https://code.claude.com/docs/en/memory
+          - https://code.claude.com/docs/en/sub-agents
+          - https://code.claude.com/docs/en/cli-reference
+          - https://code.claude.com/docs/en/security
+      - reference_id: agent_runtime_refs
+        authority: official
+        kind: docs_bundle
+        label: Runtime and memory references
+        upstream_urls:
+          - https://openai.github.io/openai-agents-python/handoffs/
+          - https://openai.github.io/openai-agents-python/guardrails/
+          - https://openai.github.io/openai-agents-python/sessions/
+          - https://docs.langchain.com/oss/python/langgraph/durable-execution
+          - https://docs.langchain.com/oss/python/langchain/human-in-the-loop
+          - https://docs.crewai.com/en/concepts/memory
+          - https://google.github.io/adk-docs/agents/workflow-agents/
+      - reference_id: ooxml_and_openxml_refs
+        authority: official
+        kind: docs_bundle
+        label: OOXML and WordprocessingML references
+        upstream_urls:
+          - https://ecma-international.org/publications-and-standards/standards/ecma-376/
+          - https://learn.microsoft.com/en-us/office/open-xml/about-the-open-xml-sdk
+          - https://learn.microsoft.com/en-us/office/open-xml/word/structure-of-a-wordprocessingml-document
+      - reference_id: open_source_editor_refs
+        authority: official
+        kind: docs_bundle
+        label: Open-source editor and integration references
+        upstream_urls:
+          - https://github.com/ONLYOFFICE/DocumentServer
+          - https://github.com/CollaboraOnline/online
+          - https://www.collaboraonline.com/integrate-collabora-online/
+  - group_id: secondary_references
+    description: Secondary community references. Useful for discovery, not authority.
+    items:
+      - reference_id: awesome_codex_cli
+        authority: secondary
+        kind: curated_list
+        label: Awesome Codex CLI
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/secondary/awesome-codex-cli
+        upstream_url: https://github.com/milisp/awesome-codex-cli
+        revision: 9427d9b422c0b6f90ff35f6b04e39e2c5bb5398c
+      - reference_id: awesome_claude_code
+        authority: secondary
+        kind: curated_list
+        label: Awesome Claude Code
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli/secondary/awesome-claude-code
+        upstream_url: https://github.com/jqueryscript/awesome-claude-code
+        revision: 1c8868b4b3a1583a9dec87945233d0ef519a854a
+      - reference_id: awesome_design_systems
+        authority: secondary
+        kind: curated_list
+        label: Awesome Design Systems
+        local_path: /Users/nihao/Documents/Playground/document-ops-system/references/frontend/secondary/awesome-design-systems
+        upstream_url: https://github.com/alexpate/awesome-design-systems
+        revision: 17df55953d0c6bca65851d8cd2e678e1fc06dcce
+notes:
+  - Treat official repositories and official docs as primary authority.
+  - Treat secondary repositories as idea discovery inputs only.

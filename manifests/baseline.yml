@@ -1,0 +1,8 @@
+schema_version: 1
+workspace_root: "/Users/nihao/Documents/Playground/document-ops-system"
+scaffold_root: "/Users/nihao/Documents/Playground/document-ops-system"
+target_docx: "/Users/nihao/Documents/Playground/document-ops-system/imports/samples/officex_docx_mvp_template.docx"
+target_docx_role: "reference_sample"
+format_authority_docx: "/Users/nihao/Documents/Playground/document-ops-system/imports/samples/officex_docx_mvp_template.docx"
+read_only_reference_roots:
+  - "/Users/nihao/Documents/Playground/document-ops-system/imports"

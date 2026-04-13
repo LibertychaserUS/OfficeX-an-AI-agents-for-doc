@@ -1,0 +1,21 @@
+schema_version: 1
+document_id: "section-assembled-demo"
+output_name: "section_assembled_demo.docx"
+managed_sections:
+  - section_id: "cover-intro"
+    title: "Document Operations System"
+    title_role: "heading_1"
+    paragraph_role: "body"
+    source_path: "sources/sections/demo/intro.md"
+  - section_id: "assembly-demo"
+    title: "Section Assembly Demo"
+    title_role: "heading_2"
+    paragraph_role: "indented_body"
+    source_path: "sources/sections/demo/assembly_demo.md"
+  - section_id: "appendix-placeholder"
+    title: "Appendix - Platform Placeholder"
+    title_role: "heading_2"
+    paragraph_role: "body"
+    source_path: "sources/sections/demo/appendix_placeholder.md"
+notes:
+  - "This is the first section-managed demo path for the platform mainline."

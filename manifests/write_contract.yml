@@ -1,0 +1,54 @@
+schema_version: 1
+template_id: "officex-docx-mvp-template"
+default_output_strategy:
+  base_document: "format_authority_docx"
+  preserve_template_sections: true
+  clear_existing_body_content: true
+paragraph_roles:
+  heading_1:
+    style: "Heading 1"
+    paragraph_format:
+      alignment: "center"
+    run_format: {}
+    allow_mixed_runs: false
+  heading_2:
+    style: "Heading 2"
+    paragraph_format:
+      alignment: "left"
+    run_format: {}
+    allow_mixed_runs: false
+  subtitle:
+    style: "Subtitle"
+    paragraph_format:
+      alignment: "left"
+      space_after_pt: 3.0
+    run_format: {}
+    allow_mixed_runs: false
+  body:
+    style: "Normal"
+    paragraph_format:
+      alignment: "justify"
+    run_format: {}
+  indented_body:
+    style: "Indented Body"
+    paragraph_format:
+      first_line_indent_pt: 24.0
+      line_spacing_multiple: 1.5
+    run_format: {}
+  figure_caption:
+    style: "Normal"
+    paragraph_format:
+      alignment: "center"
+    run_format:
+      size_pt: 10.0
+    allow_mixed_runs: false
+image_roles:
+  figure:
+    caption_role: "figure_caption"
+    width_mode: "fit_usable_body_width"
+    max_width_pt: 453.5
+    center_paragraph: true
+guardrails:
+  reject_unknown_roles: true
+  strip_template_body_content_before_write: true
+  write_from_rules_not_from_sample_fit: true

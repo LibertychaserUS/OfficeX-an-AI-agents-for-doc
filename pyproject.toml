@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "document-operations-system"
+version = "0.1.0"
+description = "Multi-agent document engineering platform with compatible report_scaffold_v3 internals."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "deepdiff==8.6.2",
+  "lxml==6.0.2",
+  "packaging==26.0",
+  "Pillow==11.3.0",
+  "pydantic==2.12.5",
+  "python-docx==1.2.0",
+  "python-pptx==1.0.2",
+  "PyYAML==6.0.3",
+  "rich==14.3.3",
+  "typer==0.23.2",
+]
+
+[project.scripts]
+document-ops-system = "tools.report_scaffold_v3.cli:main"
+report-scaffold-v3 = "tools.report_scaffold_v3.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tools*"]

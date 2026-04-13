@@ -1,0 +1,9 @@
+schema_version: 1
+workspace_root: "/Users/nihao/Documents/Playground/document-ops-system"
+scaffold_root: "/Users/nihao/Documents/Playground/document-ops-system"
+target_docx: "/Users/nihao/Library/Containers/com.tencent.xinWeChat/Data/Documents/xwechat_files/wxid_2r9lp9dzjsqc22_8c54/msg/file/2026-03/QUT-SQA-HP2R48-GU2-REPORT_final_20260330_v3(2).docx"
+target_docx_role: "reference_sample"
+format_authority_docx: "/Users/nihao/Desktop/LoopMart_Presentation/QUT-SQA-HP2R48-GU2-2023CSX-学号-姓名.docx"
+read_only_reference_roots:
+  - "/Users/nihao/Documents/Playground/archive/products/loopmart/LoopMart-GU2-rebuild/report"
+  - "/Users/nihao/Documents/Playground/archive/products/loopmart/LoopMart-GU2-rebuild/report_verify"

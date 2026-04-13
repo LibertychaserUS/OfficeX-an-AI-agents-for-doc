@@ -1,0 +1,83 @@
+schema_version: 1
+catalog_id: officex-provider-catalog
+providers:
+  - provider_id: openai
+    display_name: OpenAI-compatible Chat
+    adapter_kind: openai_compatible_chat
+    status: active
+    auth_scheme: api_key
+    default_model_id: gpt-5.4
+    config_fields:
+      - api_key
+      - model_id
+      - base_url_optional
+    notes:
+      - Initial OfficeX baseline for structured planning, generation, and review.
+      - Actual deployed model choice remains user-configurable at runtime.
+    models:
+      - model_id: gpt-5.4
+        supports_structured_output: true
+        supports_tool_calls: true
+        supports_image_generation: false
+        supports_long_context: true
+        latency_class: medium
+        risk_notes:
+          - Validate final document changes through deterministic mutation and audit.
+      - model_id: gpt-5.4-mini
+        supports_structured_output: true
+        supports_tool_calls: true
+        supports_image_generation: false
+        supports_long_context: true
+        latency_class: low
+        risk_notes:
+          - Prefer for lighter plan and review tasks when cost or latency matters.
+  - provider_id: anthropic
+    display_name: Anthropic-style Chat
+    adapter_kind: anthropic_chat
+    status: active
+    auth_scheme: api_key
+    default_model_id: claude-opus-4-1
+    config_fields:
+      - api_key
+      - model_id
+    notes:
+      - Best treated as a provider family with OfficeX-owned cognition and role prompts layered above it.
+    models:
+      - model_id: claude-opus-4-1
+        supports_structured_output: true
+        supports_tool_calls: true
+        supports_image_generation: false
+        supports_long_context: true
+        latency_class: medium
+        risk_notes:
+          - Keep prompt composition explicit; do not rely on provider-side hidden defaults.
+      - model_id: claude-sonnet-4-5
+        supports_structured_output: true
+        supports_tool_calls: true
+        supports_image_generation: false
+        supports_long_context: true
+        latency_class: low
+        risk_notes:
+          - Good candidate for iterative revision and review loops once benchmarked.
+  - provider_id: compatible_local
+    display_name: Local Or Self-Hosted Compatible Provider
+    adapter_kind: openai_compatible_local
+    status: experimental
+    auth_scheme: custom
+    default_model_id: user-configured-local
+    config_fields:
+      - base_url
+      - model_id
+      - api_key_optional
+    notes:
+      - Intended for local and self-hosted experiments after OfficeX prompt and patch contracts are stable.
+      - Use only after benchmark checks confirm prompt compliance and structured output quality.
+    models:
+      - model_id: user-configured-local
+        supports_structured_output: false
+        supports_tool_calls: false
+        supports_image_generation: false
+        supports_long_context: false
+        latency_class: medium
+        risk_notes:
+          - Requires explicit benchmark approval before it should be used for authoritative document work.

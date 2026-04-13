@@ -1,0 +1,1771 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Optional
+
+import typer
+from rich.console import Console
+import yaml
+
+from .paths import (
+    BUILDS_DIR,
+    BUILD_SOURCES_DIR,
+    SECTION_PIPELINE_DIR,
+    CURRENT_BASELINE_DIR,
+    DEFAULT_AGENT_CATALOG_MANIFEST,
+    DEFAULT_BASELINE_MANIFEST,
+    DEFAULT_BUILD_SOURCE,
+    DEFAULT_SNIPPETS_MANIFEST,
+    DEFAULT_SECTION_BUILD_SOURCE,
+    DEFAULT_PROVIDER_CATALOG_MANIFEST,
+    DEFAULT_WRITE_CONTRACT_MANIFEST,
+    CANDIDATE_AUDIT_DIR,
+    FONT_AUDIT_DIR,
+    OUTLINE_AUDIT_DIR,
+    PUBLISHED_DIR,
+    SNIPPET_AUDIT_DIR,
+    TRACE_DIR,
+    VALIDATION_DIR,
+    DEFAULT_REVISION_ISSUE_LEDGER,
+    REVISION_RUNS_DIR,
+    SANDBOXES_DIR,
+    WORKSPACES_DIR,
+)
+from .package_contract import collect_package_integrity_issues, format_package_integrity_report
+
+app = typer.Typer(no_args_is_help=True, pretty_exceptions_show_locals=False)
+console = Console()
+officex_app = typer.Typer(no_args_is_help=True, help="OfficeX runtime commands.")
+officex_workspace_app = typer.Typer(no_args_is_help=True, help="OfficeX workspace commands.")
+officex_sandbox_app = typer.Typer(no_args_is_help=True, help="OfficeX sandbox commands.")
+officex_task_app = typer.Typer(no_args_is_help=True, help="OfficeX task commands.")
+officex_prompt_app = typer.Typer(no_args_is_help=True, help="OfficeX prompt commands.")
+officex_provider_app = typer.Typer(no_args_is_help=True, help="OfficeX provider commands.")
+officex_agent_app = typer.Typer(no_args_is_help=True, help="OfficeX agent commands.")
+officex_trace_app = typer.Typer(no_args_is_help=True, help="OfficeX trace commands.")
+officex_app.add_typer(officex_workspace_app, name="workspace")
+officex_app.add_typer(officex_sandbox_app, name="sandbox")
+officex_app.add_typer(officex_task_app, name="task")
+officex_app.add_typer(officex_prompt_app, name="prompt")
+officex_app.add_typer(officex_provider_app, name="provider")
+officex_app.add_typer(officex_agent_app, name="agent")
+officex_app.add_typer(officex_trace_app, name="trace")
+app.add_typer(officex_app, name="officex")
+
+
+def ensure_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def write_json(path: Path, payload: dict | list) -> None:
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def write_markdown(path: Path, content: str) -> None:
+    path.write_text(content.strip() + "\n", encoding="utf-8")
+
+
+def write_yaml(path: Path, payload: dict | list) -> None:
+    path.write_text(
+        yaml.safe_dump(payload, sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+
+
+def is_within_directory(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def build_summary_paths(output_docx: Path) -> tuple[Path, Path]:
+    return (
+        output_docx.with_suffix(".build_summary.json"),
+        output_docx.with_suffix(".build_summary.md"),
+    )
+
+
+def section_summary_paths(output_source: Path) -> tuple[Path, Path]:
+    return (
+        output_source.with_suffix(".summary.json"),
+        output_source.with_suffix(".summary.md"),
+    )
+
+
+def resolve_target_context(
+    docx: Optional[Path],
+    baseline_manifest_path: Path,
+    explicit_target_role: Optional[str] = None,
+) -> tuple[Path, str, Optional[Path]]:
+    from .manifest_loader import load_baseline_manifest
+
+    manifest = load_baseline_manifest(baseline_manifest_path)
+    format_authority_docx = (
+        manifest.format_authority_docx.expanduser().resolve()
+        if manifest.format_authority_docx
+        else None
+    )
+
+    def infer_target_role(resolved_docx: Path) -> str:
+        if explicit_target_role is not None:
+            return explicit_target_role
+        if resolved_docx == manifest.target_docx.expanduser().resolve():
+            return manifest.target_docx_role
+        if format_authority_docx is not None and resolved_docx == format_authority_docx:
+            return "template_authority"
+        candidate_roots = [BUILDS_DIR.expanduser().resolve(), SECTION_PIPELINE_DIR.expanduser().resolve()]
+        for root in candidate_roots:
+            try:
+                resolved_docx.relative_to(root)
+                return "candidate_output"
+            except ValueError:
+                continue
+        return "ad_hoc"
+
+    if docx is not None:
+        resolved_docx = docx.expanduser().resolve()
+        return (resolved_docx, infer_target_role(resolved_docx), format_authority_docx)
+    return (
+        manifest.target_docx.expanduser().resolve(),
+        explicit_target_role or manifest.target_docx_role,
+        format_authority_docx,
+    )
+
+
+def render_import_summary(
+    inventory: dict,
+    *,
+    target_role: str,
+    format_authority_docx: Optional[Path],
+) -> str:
+    summary = inventory["summary"]
+    lines = [
+        "# Baseline Import Summary",
+        "",
+        f"- Source docx: `{inventory['source_docx']}`",
+        f"- Target role: `{target_role}`",
+        f"- Formatting authority: `{format_authority_docx}`"
+        if format_authority_docx is not None
+        else "- Formatting authority: `[none]`",
+        f"- Paragraphs: {summary['paragraph_count']}",
+        f"- Headings: {summary['heading_count']}",
+        f"- Figures: {summary['figure_count']}",
+        f"- Image relationships: {summary['image_relationship_count']}",
+        f"- Image paragraphs: {summary['image_paragraph_count']}",
+        f"- Sections: {summary['section_count']}",
+        f"- Appendix headings: {summary['appendix_heading_count']}",
+        f"- Appendix file references: {summary['appendix_file_reference_count']}",
+        "",
+        "## Top Headings",
+        "",
+    ]
+    for heading in inventory["headings"][:15]:
+        lines.append(f"- L{heading['level']} `{heading['section_id']}`: {heading['text']}")
+    return "\n".join(lines)
+
+
+def render_build_summary(result: dict) -> str:
+    lines = [
+        "# Build Summary",
+        "",
+        f"- Document ID: `{result['document_id']}`",
+        f"- Template docx: `{result['template_docx']}`",
+        f"- Output docx: `{result['output_docx']}`",
+        f"- Blocks: {result['block_count']}",
+        f"- Rendered paragraphs: {result['paragraph_count']}",
+        f"- Image blocks: {result['image_count']}",
+    ]
+    return "\n".join(lines)
+
+
+def render_font_audit_summary(report: dict) -> str:
+    lines = [
+        "# Font Audit Summary",
+        "",
+        f"- Source docx: `{report['source_docx']}`",
+        f"- Expected font: `{report['expected_font']}`",
+        f"- Total runs scanned: {report['total_runs_scanned']}",
+        f"- Explicit expected-font runs: {report['explicit_expected_font_runs']}",
+        f"- Inherited-font runs: {report['inherited_font_runs']}",
+        f"- Explicit other-font runs: {report['explicit_other_font_runs']}",
+    ]
+    return "\n".join(lines)
+
+
+def render_outline_audit_summary(report: dict) -> str:
+    lines = [
+        "# Outline Audit Summary",
+        "",
+        f"- Source docx: `{report['source_docx']}`",
+        f"- Heading count: {report['heading_count']}",
+        f"- Appendix heading count: {report['appendix_heading_count']}",
+        f"- Heading levels: {report['heading_level_counts']}",
+        f"- Duplicate heading texts: {len(report['duplicate_heading_texts'])}",
+    ]
+    return "\n".join(lines)
+
+
+def render_candidate_audit_summary(report: dict) -> str:
+    lines = [
+        "# Candidate Audit Summary",
+        "",
+        f"- Source docx: `{report['source_docx']}`",
+        f"- Expected paragraph count: {report['expected_paragraph_count']}",
+        f"- Actual paragraph count: {report['actual_paragraph_count']}",
+        f"- Expected heading count: {report['expected_heading_count']}",
+        f"- Actual heading count: {report['actual_heading_count']}",
+        f"- Expected image count: {report['expected_image_count']}",
+        f"- Actual figure count: {report['actual_figure_count']}",
+        f"- Expected snippet count: {report['expected_snippet_count']}",
+        f"- Actual snippet count: {report['actual_snippet_count']}",
+        f"- Finding count: {len(report['findings'])}",
+    ]
+    return "\n".join(lines)
+
+
+def render_section_assembly_summary(build_source: dict, *, output_path: Path) -> str:
+    lines = [
+        "# Section Assembly Summary",
+        "",
+        f"- Document ID: `{build_source['document_id']}`",
+        f"- Output name: `{build_source['output_name']}`",
+        f"- Block count: {len(build_source['blocks'])}",
+        f"- Generated build source: `{output_path}`",
+    ]
+    return "\n".join(lines)
+
+
+def render_officex_sandbox_created(run_id: str, sandbox_root: Path) -> str:
+    return f"Created OfficeX sandbox `{run_id}` at {sandbox_root}"
+
+
+def render_officex_task_run(report: dict) -> str:
+    return (
+        "Ran OfficeX docx MVP task "
+        f"`{report['run_id']}` with candidate {report['candidate_docx']} "
+        f"and validation {report['validation_error_count']} error(s) / "
+        f"{report['validation_warning_count']} warning(s)."
+    )
+
+
+def render_officex_provider_list(report: dict) -> str:
+    lines = ["# OfficeX Providers", ""]
+    for provider in report["providers"]:
+        lines.append(
+            "- "
+            f"`{provider['provider_id']}` "
+            f"({provider['display_name']}) "
+            f"status: `{provider['status']}` "
+            f"default model: `{provider['default_model_id']}`"
+        )
+    return "\n".join(lines)
+
+
+def render_officex_provider_binding(report: dict, *, include_prompt: bool) -> str:
+    lines = [
+        "# OfficeX Provider Binding",
+        "",
+        f"- Provider: `{report['provider_id']}` ({report['provider_display_name']})",
+        f"- Adapter kind: `{report['adapter_kind']}`",
+        f"- Status: `{report['status']}`",
+        f"- Auth scheme: `{report['auth_scheme']}`",
+        f"- Model: `{report['model_id']}`",
+        f"- Role: `{report['role']}`",
+        f"- Include cognition: `{report['include_cognition']}`",
+        f"- Structured output: `{report['supports_structured_output']}`",
+        f"- Tool calls: `{report['supports_tool_calls']}`",
+        f"- Image generation: `{report['supports_image_generation']}`",
+        f"- Long context: `{report['supports_long_context']}`",
+        f"- Latency class: `{report['latency_class']}`",
+    ]
+    if report["config_fields"]:
+        lines.extend(["", "## Config Fields", ""])
+        for field_name in report["config_fields"]:
+            lines.append(f"- `{field_name}`")
+    if report["notes"]:
+        lines.extend(["", "## Notes", ""])
+        for note in report["notes"]:
+            lines.append(f"- {note}")
+    if include_prompt:
+        lines.extend(["", "## Prompt", "", report["prompt"].rstrip()])
+    return "\n".join(lines)
+
+
+def render_officex_provider_request(report: dict) -> str:
+    missing_fields = [
+        field_name
+        for field_name in report["required_config_fields"]
+        if field_name not in set(report["provided_config_fields"])
+    ]
+    lines = [
+        "# OfficeX Provider Request Envelope",
+        "",
+        f"- Envelope: `{report['envelope_id']}`",
+        f"- Provider: `{report['provider_id']}`",
+        f"- Model: `{report['model_id']}`",
+        f"- Adapter kind: `{report['adapter_kind']}`",
+        f"- Dispatch mode: `{report['dispatch_mode']}`",
+        f"- Role: `{report['role']}`",
+        f"- Include cognition: `{report['include_cognition']}`",
+        f"- Task packet: `{report['task_packet_id']}`",
+        f"- Task family: `{report['task_family']}`",
+        f"- Approval mode: `{report['approval_mode']}`",
+        f"- Response contract: `{report['response_contract_kind']}`",
+        "",
+        "## Config Coverage",
+        "",
+        f"- Required fields: {', '.join(report['required_config_fields']) if report['required_config_fields'] else '[none]'}",
+        f"- Provided fields: {', '.join(report['provided_config_fields']) if report['provided_config_fields'] else '[none]'}",
+        f"- Missing required fields: {', '.join(missing_fields) if missing_fields else 'none'}",
+    ]
+    return "\n".join(lines)
+
+
+def render_officex_workspace_created(report: dict) -> str:
+    return (
+        "Created OfficeX workspace "
+        f"`{report['workspace_id']}` at {report['root_path']} "
+        f"with sandbox root {report['sandboxes_dir']}."
+    )
+
+
+def render_officex_task_packet(report: dict) -> str:
+    lines = [
+        "# OfficeX Task Packet Inspection",
+        "",
+        f"- Task packet ID: `{report['task_packet_id']}`",
+        f"- Goal: {report['goal']}",
+        f"- Task family: `{report['task_family']}`",
+        f"- Active workspace: `{report['active_workspace']}`",
+        f"- Approval mode: `{report['approval_mode']}`",
+        f"- Publish gate: `{report['publish_gate']}`",
+    ]
+    if report["allowed_surfaces"]:
+        lines.extend(["", "## Allowed Surfaces", ""])
+        for item in report["allowed_surfaces"]:
+            lines.append(f"- `{item}`")
+    if report["acceptance_gates"]:
+        lines.extend(["", "## Acceptance Gates", ""])
+        for item in report["acceptance_gates"]:
+            lines.append(f"- {item}")
+    return "\n".join(lines)
+
+
+def render_officex_agent_list(report: dict) -> str:
+    lines = ["# OfficeX Agents", ""]
+    for agent in report["agents"]:
+        lines.append(
+            "- "
+            f"`{agent['agent_id']}` "
+            f"({agent['display_name']}) "
+            f"status: `{agent['status']}` "
+            f"role: `{agent['runtime_role']}`"
+        )
+    return "\n".join(lines)
+
+
+def render_officex_agent_show(report: dict) -> str:
+    lines = [
+        "# OfficeX Agent",
+        "",
+        f"- Agent: `{report['agent_id']}` ({report['display_name']})",
+        f"- Runtime role: `{report['runtime_role']}`",
+        f"- Status: `{report['status']}`",
+    ]
+    if report["prompt_roles"]:
+        lines.extend(["", "## Prompt Roles", ""])
+        for role in report["prompt_roles"]:
+            lines.append(f"- `{role}`")
+    if report["domain_pack_candidates"]:
+        lines.extend(["", "## Domain Pack Candidates", ""])
+        for item in report["domain_pack_candidates"]:
+            lines.append(f"- `{item}`")
+    if report["review_pack_candidates"]:
+        lines.extend(["", "## Review Pack Candidates", ""])
+        for item in report["review_pack_candidates"]:
+            lines.append(f"- `{item}`")
+    if report["owned_capabilities"]:
+        lines.extend(["", "## Owned Capabilities", ""])
+        for item in report["owned_capabilities"]:
+            lines.append(f"- {item}")
+    if report["notes"]:
+        lines.extend(["", "## Notes", ""])
+        for note in report["notes"]:
+            lines.append(f"- {note}")
+    return "\n".join(lines)
+
+
+def render_officex_trace_checkpoint(report: dict) -> str:
+    return (
+        "Created OfficeX trace checkpoint "
+        f"`{report['checkpoint_id']}` at {report['checkpoint_path']}."
+    )
+
+
+def render_officex_patch_bridge_report(report: dict) -> str:
+    lines = [
+        "# OfficeX Patch Bridge Report",
+        "",
+        f"- Patch bundle: `{report['patch_bundle_id']}`",
+        f"- Target document: `{report['target_document_id']}`",
+        f"- Candidate: `{report['candidate_path']}`",
+        f"- Anchor snapshot: `{report['anchor_snapshot_path']}`",
+        f"- Patch bridge spec: `{report['patch_spec_path']}`",
+        f"- Patch bridge execution report: `{report['execution_report_path']}`",
+        f"- Dry run: `{report['dry_run']}`",
+        f"- Status: `{report['status']}`",
+        f"- Operation count: {report['operation_count']}",
+        f"- Applied operations: {report['applied_operation_count']}",
+        f"- Rejected operations: {report['rejected_operation_count']}",
+    ]
+    if report["backup_path"]:
+        lines.append(f"- Backup path: `{report['backup_path']}`")
+    if report["output_candidate_hash"]:
+        lines.append(f"- Output candidate hash: `{report['output_candidate_hash']}`")
+    if report["failure_reason"]:
+        lines.append(f"- Failure reason: {report['failure_reason']}")
+    return "\n".join(lines)
+
+
+def render_officex_review_ledger(report: dict, *, output_path: Path) -> str:
+    return (
+        "Built OfficeX review ledger "
+        f"`{report['review_id']}` with {len(report['findings'])} finding(s) at {output_path}."
+    )
+
+
+def render_officex_anchor_prep_report(report: dict) -> str:
+    return (
+        "Extracted OfficeX live anchors for review "
+        f"`{report['review_id']}` into {report['output_dir']} "
+        f"with {report['anchor_count']} anchor(s) and {report['finding_count']} finding(s)."
+    )
+
+
+def render_section_pipeline_summary(report: dict) -> str:
+    lines = [
+        "# Section Pipeline Summary",
+        "",
+        f"- Build source: `{report['build_source_path']}`",
+        f"- Output docx: `{report['output_docx']}`",
+        f"- Candidate audit: `{report['candidate_audit_path']}`",
+        f"- Validation report: `{report['validation_report_path']}`",
+        f"- Candidate errors: {report['candidate_error_count']}",
+        f"- Candidate warnings: {report['candidate_warning_count']}",
+        f"- Validation errors: {report['validation_error_count']}",
+        f"- Validation warnings: {report['validation_warning_count']}",
+    ]
+    return "\n".join(lines)
+
+
+def render_snippet_audit_summary(report: dict) -> str:
+    lines = [
+        "# Snippet Audit Summary",
+        "",
+        f"- Source manifest: `{report['source_manifest']}`",
+        f"- Snippets checked: {report['snippets_checked']}",
+        f"- Findings: {len(report['findings'])}",
+        f"- Extracted entries: {len(report['entries'])}",
+    ]
+    return "\n".join(lines)
+
+
+def render_published_run_summary(report: dict) -> str:
+    lines = [
+        "# Published Run Summary",
+        "",
+        f"- Published id: `{report['published_id']}`",
+        f"- Published at (UTC): `{report['published_at_utc']}`",
+        f"- Run dir: `{report['run_dir']}`",
+        f"- Canonical root: `{report['canonical_root']}`",
+        f"- Output docx: `{report['output_docx']}`",
+        f"- Candidate errors/warnings: {report['candidate_error_count']}/{report['candidate_warning_count']}",
+        f"- Validation errors/warnings: {report['validation_error_count']}/{report['validation_warning_count']}",
+    ]
+    return "\n".join(lines)
+
+
+def render_trace_catalog_summary(report: dict) -> str:
+    lines = [
+        "# Trace Catalog Summary",
+        "",
+        f"- Trace dir: `{report['trace_dir']}`",
+        f"- Checkpoint count: {report['checkpoint_count']}",
+        f"- Latest checkpoint: `{report['latest_checkpoint_id']}`",
+        f"- Missing numbers: {', '.join(str(value) for value in report['missing_numbers'])}"
+        if report["missing_numbers"]
+        else "- Missing numbers: none",
+    ]
+    return "\n".join(lines)
+
+
+def resolve_revision_run_dir(run_dir: Path) -> Path:
+    resolved = run_dir.expanduser().resolve()
+    ensure_dir(resolved)
+    return resolved
+
+
+def ensure_safe_candidate_output(output_docx: Path, *, baseline_manifest) -> None:
+    resolved_output = output_docx.expanduser().resolve()
+    protected_paths = [baseline_manifest.target_docx.expanduser().resolve()]
+    if baseline_manifest.format_authority_docx is not None:
+        protected_paths.append(baseline_manifest.format_authority_docx.expanduser().resolve())
+
+    for protected_path in protected_paths:
+        if resolved_output == protected_path:
+            raise typer.BadParameter(
+                f"Refusing to write candidate output over protected file `{protected_path}`."
+            )
+
+    for root in baseline_manifest.read_only_reference_roots:
+        resolved_root = root.expanduser().resolve()
+        try:
+            resolved_output.relative_to(resolved_root)
+        except ValueError:
+            continue
+        raise typer.BadParameter(
+            f"Refusing to write candidate output inside read-only reference root `{resolved_root}`."
+        )
+
+
+@app.callback()
+def preflight() -> None:
+    issues = collect_package_integrity_issues()
+    if issues:
+        console.print(f"[bold red]{format_package_integrity_report(issues)}[/bold red]")
+        raise typer.Exit(code=2)
+
+
+@app.command("show-config")
+def show_config(
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Path to the baseline manifest YAML.",
+    ),
+) -> None:
+    from .manifest_loader import load_baseline_manifest
+
+    manifest = load_baseline_manifest(baseline_manifest)
+    console.print(f"Project root: {manifest.scaffold_root}")
+    console.print(f"Target docx: {manifest.target_docx}")
+    console.print(f"Target role: {manifest.target_docx_role}")
+    console.print(f"Formatting authority: {manifest.format_authority_docx}")
+    console.print("Read-only references:")
+    for root in manifest.read_only_reference_roots:
+        console.print(f"  - {root}")
+
+
+@app.command("import-baseline")
+def import_baseline(
+    docx: Optional[Path] = typer.Option(
+        None,
+        "--docx",
+        help="Optional explicit target docx. Defaults to manifests/baseline.yml",
+    ),
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Path to the baseline manifest YAML.",
+    ),
+    output_dir: Path = typer.Option(
+        CURRENT_BASELINE_DIR,
+        "--output-dir",
+        help="Directory for generated baseline inventory files.",
+    ),
+) -> None:
+    from .docx_inspector import inspect_docx
+
+    target_docx, target_role, format_authority_docx = resolve_target_context(
+        docx, baseline_manifest
+    )
+    ensure_dir(output_dir)
+
+    inventory = inspect_docx(target_docx)
+
+    write_json(output_dir / "inventory.json", inventory)
+    write_json(output_dir / "headings.json", inventory["headings"])
+    write_json(output_dir / "figures.json", inventory["figures"])
+    write_json(output_dir / "paragraph_fingerprints.json", inventory["paragraph_fingerprints"])
+    write_markdown(
+        output_dir / "baseline_diagnostic.md",
+        render_import_summary(
+            inventory,
+            target_role=target_role,
+            format_authority_docx=format_authority_docx,
+        ),
+    )
+
+    console.print(f"Imported baseline from {target_docx}")
+    console.print(f"Wrote inventory to {output_dir}")
+
+
+@app.command("validate-word")
+def validate_word(
+    docx: Optional[Path] = typer.Option(
+        None,
+        "--docx",
+        help="Optional explicit target docx. Defaults to manifests/baseline.yml",
+    ),
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Path to the baseline manifest YAML.",
+    ),
+    target_role: Optional[str] = typer.Option(
+        None,
+        "--target-role",
+        help="Optional explicit target role: reference_sample, template_authority, candidate_output, or ad_hoc.",
+    ),
+    output_dir: Path = typer.Option(
+        VALIDATION_DIR,
+        "--output-dir",
+        help="Directory for generated validation reports.",
+    ),
+) -> None:
+    from .docx_inspector import inspect_docx, inspect_docx_overrides
+    from .manifest_loader import load_layout_contract, load_template_profile
+    from .ooxml_inspector import extract_effective_style_inventory
+    from .validation import build_validation_report, render_validation_markdown
+
+    target_docx, target_role, format_authority_docx = resolve_target_context(
+        docx, baseline_manifest, target_role
+    )
+    ensure_dir(output_dir)
+
+    inventory = inspect_docx(target_docx)
+    override_inventory = inspect_docx_overrides(target_docx)
+    template_profile = load_template_profile().model_dump(mode="json")
+    layout_contract = load_layout_contract().model_dump(mode="json")
+    style_inventory = extract_effective_style_inventory(target_docx)
+
+    report = build_validation_report(
+        target_docx,
+        inventory,
+        target_role=target_role,
+        format_authority_docx=format_authority_docx,
+        template_profile=template_profile,
+        layout_contract=layout_contract,
+        style_inventory=style_inventory,
+        override_inventory=override_inventory,
+    )
+
+    write_json(output_dir / "validation.json", report.model_dump(mode="json"))
+    write_markdown(output_dir / "validation_report.md", render_validation_markdown(report))
+
+    error_count = sum(1 for finding in report.findings if finding.severity == "error")
+    warning_count = sum(1 for finding in report.findings if finding.severity == "warning")
+    console.print(
+        f"Validated {target_docx} as {target_role} with {error_count} error(s) and {warning_count} warning(s)."
+    )
+
+
+@app.command("build-word")
+def build_word(
+    source: Path = typer.Option(
+        DEFAULT_BUILD_SOURCE,
+        "--source",
+        help="Structured build source for a minimal candidate docx.",
+    ),
+    write_contract: Path = typer.Option(
+        DEFAULT_WRITE_CONTRACT_MANIFEST,
+        "--write-contract",
+        help="Write contract YAML.",
+    ),
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Path to the baseline manifest YAML.",
+    ),
+    output_docx: Optional[Path] = typer.Option(
+        None,
+        "--output-docx",
+        help="Optional explicit candidate output path.",
+    ),
+) -> None:
+    from .manifest_loader import load_baseline_manifest, load_build_source, load_write_contract
+    from .writer import build_word_candidate
+
+    baseline = load_baseline_manifest(baseline_manifest)
+    template_docx = (
+        baseline.format_authority_docx.expanduser().resolve()
+        if baseline.format_authority_docx
+        else baseline.target_docx.expanduser().resolve()
+    )
+    source_manifest = load_build_source(source)
+    write_contract_manifest = load_write_contract(write_contract)
+
+    resolved_output = output_docx
+    if resolved_output is None:
+        resolved_output = BUILDS_DIR / source_manifest.output_name
+    resolved_output = resolved_output.expanduser().resolve()
+    ensure_safe_candidate_output(resolved_output, baseline_manifest=baseline)
+
+    result = build_word_candidate(
+        template_docx=template_docx,
+        source=source_manifest,
+        contract=write_contract_manifest,
+        output_docx=resolved_output,
+    )
+
+    build_payload = result.model_dump(mode="json")
+    summary_json_path, summary_markdown_path = build_summary_paths(resolved_output)
+    write_json(summary_json_path, build_payload)
+    write_markdown(summary_markdown_path, render_build_summary(build_payload))
+
+    if is_within_directory(resolved_output, BUILDS_DIR):
+        ensure_dir(BUILDS_DIR)
+        write_json(BUILDS_DIR / "build_summary.json", build_payload)
+        write_markdown(BUILDS_DIR / "build_summary.md", render_build_summary(build_payload))
+
+    console.print(f"Built candidate docx at {resolved_output}")
+
+
+@app.command("check-package")
+def check_package() -> None:
+    issues = collect_package_integrity_issues()
+    if issues:
+        console.print(format_package_integrity_report(issues))
+        raise typer.Exit(code=1)
+    console.print("OfficeX runtime package integrity check passed.")
+
+
+@officex_workspace_app.command("init")
+def officex_workspace_init(
+    workspace_id: Optional[str] = typer.Option(
+        None,
+        "--workspace-id",
+        help="Optional explicit OfficeX workspace id.",
+    ),
+    workspace_root: Path = typer.Option(
+        WORKSPACES_DIR,
+        "--workspace-root",
+        help="Root directory for OfficeX workspaces.",
+    ),
+    active_profile: str = typer.Option(
+        "docx_mvp",
+        "--active-profile",
+        help="Active profile name for the workspace.",
+    ),
+    active_page_profile: str = typer.Option(
+        "a4",
+        "--active-page-profile",
+        help="Active page profile for the workspace.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .workspace_runtime import create_workspace
+
+    try:
+        manifest = create_workspace(
+            workspace_id=workspace_id,
+            workspace_root=workspace_root.expanduser().resolve(),
+            active_profile=active_profile,
+            active_page_profile=active_page_profile,
+        )
+    except FileExistsError as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+    payload = manifest.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_workspace_created(payload))
+
+
+@officex_sandbox_app.command("create")
+def officex_sandbox_create(
+    run_id: Optional[str] = typer.Option(
+        None,
+        "--run-id",
+        help="Optional explicit sandbox run id.",
+    ),
+    sandbox_root: Path = typer.Option(
+        SANDBOXES_DIR,
+        "--sandbox-root",
+        help="Root directory for OfficeX sandboxes.",
+    ),
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Path to the baseline manifest YAML.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .officex_runtime import create_docx_mvp_sandbox
+
+    try:
+        manifest = create_docx_mvp_sandbox(
+            run_id=run_id,
+            sandbox_root=sandbox_root.expanduser().resolve(),
+            baseline_manifest_path=baseline_manifest.expanduser().resolve(),
+        )
+    except FileExistsError as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+    payload = manifest.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_sandbox_created(manifest.run_id, manifest.sandbox_root))
+
+
+@officex_task_app.command("run-docx-mvp")
+def officex_task_run_docx_mvp(
+    run_id: Optional[str] = typer.Option(
+        None,
+        "--run-id",
+        help="Optional explicit run id.",
+    ),
+    sandbox_root: Path = typer.Option(
+        SANDBOXES_DIR,
+        "--sandbox-root",
+        help="Root directory for OfficeX sandboxes.",
+    ),
+    source: Path = typer.Option(
+        DEFAULT_BUILD_SOURCE,
+        "--source",
+        help="Structured build source used for the MVP run.",
+    ),
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Path to the baseline manifest YAML.",
+    ),
+    write_contract: Path = typer.Option(
+        DEFAULT_WRITE_CONTRACT_MANIFEST,
+        "--write-contract",
+        help="Path to the write contract YAML.",
+    ),
+    approval_mode: str = typer.Option(
+        "ask_every_conflict",
+        "--approval-mode",
+        help="Approval mode for the runtime task packet.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .officex_runtime import run_docx_mvp
+
+    try:
+        report = run_docx_mvp(
+            run_id=run_id,
+            sandbox_root=sandbox_root.expanduser().resolve(),
+            source_path=source.expanduser().resolve(),
+            baseline_manifest_path=baseline_manifest.expanduser().resolve(),
+            write_contract_path=write_contract.expanduser().resolve(),
+            approval_mode=approval_mode,
+        )
+    except FileExistsError as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+    payload = report.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_task_run(payload))
+
+
+@officex_task_app.command("inspect")
+def officex_task_inspect(
+    task_packet: Optional[Path] = typer.Option(
+        None,
+        "--task-packet",
+        help="Explicit path to a task_packet.json file.",
+    ),
+    run_id: Optional[str] = typer.Option(
+        None,
+        "--run-id",
+        help="Sandbox run id used to resolve runtime/task_packet.json.",
+    ),
+    sandbox_root: Path = typer.Option(
+        SANDBOXES_DIR,
+        "--sandbox-root",
+        help="Root directory for OfficeX sandboxes.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .officex_runtime import load_task_packet
+
+    try:
+        packet = load_task_packet(
+            task_packet_path=task_packet,
+            run_id=run_id,
+            sandbox_root=sandbox_root.expanduser().resolve(),
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = packet.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_task_packet(payload))
+
+
+@officex_task_app.command("build-review-ledger")
+def officex_task_build_review_ledger(
+    review_findings: Path = typer.Option(
+        ...,
+        "--review-findings",
+        help="Structured manual review JSON/YAML input.",
+    ),
+    output_path: Optional[Path] = typer.Option(
+        None,
+        "--output-path",
+        help="Optional explicit output path for the normalized OfficeX review ledger JSON.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .review_runtime import build_review_ledger
+
+    try:
+        ledger, resolved_output_path = build_review_ledger(
+            review_input_path=review_findings,
+            output_path=output_path,
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = ledger.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_review_ledger(payload, output_path=resolved_output_path))
+
+
+@officex_task_app.command("extract-anchors")
+def officex_task_extract_anchors(
+    candidate_docx: Path = typer.Option(
+        ...,
+        "--candidate-docx",
+        help="Candidate docx to inspect for OfficeX live anchors.",
+    ),
+    review_ledger: Path = typer.Option(
+        ...,
+        "--review-ledger",
+        help="Normalized OfficeX review ledger JSON/YAML file.",
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None,
+        "--output-dir",
+        help="Optional explicit output directory for review prep artifacts.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .review_runtime import extract_anchors_from_review_ledger
+
+    try:
+        report = extract_anchors_from_review_ledger(
+            candidate_path=candidate_docx,
+            review_ledger_path=review_ledger,
+            output_dir=output_dir,
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = report.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        console.print(render_officex_anchor_prep_report(payload))
+    if payload["finding_count"] > 0:
+        raise typer.Exit(code=1)
+
+
+@officex_task_app.command("apply-patch-bundle")
+def officex_task_apply_patch_bundle(
+    patch_bundle: Path = typer.Option(
+        ...,
+        "--patch-bundle",
+        help="Path to an OfficeX patch bundle JSON/YAML file.",
+    ),
+    candidate_docx: Path = typer.Option(
+        ...,
+        "--candidate-docx",
+        help="Candidate docx to mutate through the deterministic OfficeX patch bridge.",
+    ),
+    anchor_snapshot: Path = typer.Option(
+        ...,
+        "--anchor-snapshot",
+        help="Revision live anchor snapshot JSON/YAML file.",
+    ),
+    dry_run: bool = typer.Option(
+        True,
+        "--dry-run/--apply",
+        help="Validate through the deterministic bridge without mutating, or apply in place.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .patch_bridge_runtime import apply_officex_patch_bundle
+
+    try:
+        report = apply_officex_patch_bundle(
+            patch_bundle_path=patch_bundle.expanduser().resolve(),
+            candidate_path=candidate_docx.expanduser().resolve(),
+            anchor_snapshot_path=anchor_snapshot.expanduser().resolve(),
+            dry_run=dry_run,
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = report.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        console.print(render_officex_patch_bridge_report(payload))
+    if payload["status"] == "failed":
+        raise typer.Exit(code=1)
+
+
+@officex_prompt_app.command("show")
+def officex_prompt_show(
+    role: str = typer.Option(
+        ...,
+        "--role",
+        help="OfficeX role prompt id.",
+    ),
+    include_cognition: bool = typer.Option(
+        True,
+        "--include-cognition/--role-only",
+        help="Include the OfficeX cognition layer before the role prompt.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of raw prompt text.",
+    ),
+) -> None:
+    from .prompt_runtime import compose_officex_prompt, list_officex_roles
+
+    if role not in list_officex_roles():
+        console.print(f"Unknown OfficeX role `{role}`. Available roles: {', '.join(list_officex_roles())}")
+        raise typer.Exit(code=1)
+
+    prompt = compose_officex_prompt(role, include_cognition=include_cognition)
+    if as_json:
+        console.print_json(
+            json.dumps(
+                {
+                    "role": role,
+                    "include_cognition": include_cognition,
+                    "prompt": prompt,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+    console.print(prompt)
+
+
+@officex_provider_app.command("list")
+def officex_provider_list(
+    catalog_path: Path = typer.Option(
+        DEFAULT_PROVIDER_CATALOG_MANIFEST,
+        "--catalog-path",
+        help="Path to the OfficeX provider catalog YAML.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .provider_runtime import load_provider_catalog_manifest
+
+    catalog = load_provider_catalog_manifest(catalog_path.expanduser().resolve())
+    payload = catalog.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_provider_list(payload))
+
+
+@officex_provider_app.command("show")
+def officex_provider_show(
+    provider: str = typer.Option(
+        ...,
+        "--provider",
+        help="OfficeX provider id.",
+    ),
+    role: str = typer.Option(
+        "orchestrator",
+        "--role",
+        help="OfficeX role prompt id.",
+    ),
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        help="Optional explicit provider model id.",
+    ),
+    include_cognition: bool = typer.Option(
+        True,
+        "--include-cognition/--role-only",
+        help="Include the OfficeX cognition layer before the role prompt.",
+    ),
+    include_prompt: bool = typer.Option(
+        False,
+        "--include-prompt/--metadata-only",
+        help="Include the composed OfficeX prompt in the provider report.",
+    ),
+    catalog_path: Path = typer.Option(
+        DEFAULT_PROVIDER_CATALOG_MANIFEST,
+        "--catalog-path",
+        help="Path to the OfficeX provider catalog YAML.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .provider_runtime import build_provider_prompt_binding
+
+    try:
+        binding = build_provider_prompt_binding(
+            provider,
+            role=role,
+            model_id=model,
+            include_cognition=include_cognition,
+            catalog_path=catalog_path.expanduser().resolve(),
+        )
+    except ValueError as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = binding.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_provider_binding(payload, include_prompt=include_prompt))
+
+
+@officex_provider_app.command("build-request")
+def officex_provider_build_request(
+    provider: str = typer.Option(
+        ...,
+        "--provider",
+        help="OfficeX provider id.",
+    ),
+    role: str = typer.Option(
+        "orchestrator",
+        "--role",
+        help="OfficeX role prompt id.",
+    ),
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        help="Optional explicit provider model id.",
+    ),
+    task_packet: Optional[Path] = typer.Option(
+        None,
+        "--task-packet",
+        help="Explicit path to a task_packet.json file.",
+    ),
+    run_id: Optional[str] = typer.Option(
+        None,
+        "--run-id",
+        help="Sandbox run id used to resolve runtime/task_packet.json.",
+    ),
+    sandbox_root: Path = typer.Option(
+        SANDBOXES_DIR,
+        "--sandbox-root",
+        help="Root directory for OfficeX sandboxes.",
+    ),
+    config_field: list[str] = typer.Option(
+        None,
+        "--config-field",
+        help="Repeatable provider config field assignment in `name=value` form.",
+    ),
+    response_contract_kind: str = typer.Option(
+        "plan_object",
+        "--response-contract-kind",
+        help="Expected provider response contract kind.",
+    ),
+    include_cognition: bool = typer.Option(
+        True,
+        "--include-cognition/--role-only",
+        help="Include the OfficeX cognition layer before the role prompt.",
+    ),
+    catalog_path: Path = typer.Option(
+        DEFAULT_PROVIDER_CATALOG_MANIFEST,
+        "--catalog-path",
+        help="Path to the OfficeX provider catalog YAML.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .provider_runtime import build_provider_request_envelope
+
+    try:
+        envelope = build_provider_request_envelope(
+            provider,
+            role=role,
+            model_id=model,
+            include_cognition=include_cognition,
+            task_packet_path=task_packet.expanduser().resolve() if task_packet is not None else None,
+            run_id=run_id,
+            sandbox_root=sandbox_root.expanduser().resolve(),
+            config_field_assignments=config_field,
+            response_contract_kind=response_contract_kind,
+            catalog_path=catalog_path.expanduser().resolve(),
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = envelope.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_provider_request(payload))
+
+
+@officex_agent_app.command("list")
+def officex_agent_list(
+    catalog_path: Path = typer.Option(
+        DEFAULT_AGENT_CATALOG_MANIFEST,
+        "--catalog-path",
+        help="Path to the OfficeX agent catalog YAML.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .agent_runtime import load_agent_catalog_manifest
+
+    catalog = load_agent_catalog_manifest(catalog_path.expanduser().resolve())
+    payload = catalog.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_agent_list(payload))
+
+
+@officex_agent_app.command("show")
+def officex_agent_show(
+    agent: str = typer.Option(
+        ...,
+        "--agent",
+        help="OfficeX agent id.",
+    ),
+    catalog_path: Path = typer.Option(
+        DEFAULT_AGENT_CATALOG_MANIFEST,
+        "--catalog-path",
+        help="Path to the OfficeX agent catalog YAML.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .agent_runtime import get_agent_entry
+
+    try:
+        entry = get_agent_entry(agent, catalog_path=catalog_path.expanduser().resolve())
+    except ValueError as exc:
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = entry.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_agent_show(payload))
+
+
+@officex_trace_app.command("checkpoint")
+def officex_trace_checkpoint(
+    title: str = typer.Option(
+        ...,
+        "--title",
+        help="Checkpoint title.",
+    ),
+    summary_line: list[str] = typer.Option(
+        None,
+        "--summary-line",
+        help="Repeat to append summary bullet lines.",
+    ),
+    verification_line: list[str] = typer.Option(
+        None,
+        "--verification-line",
+        help="Repeat to append verification bullet lines.",
+    ),
+    follow_up_line: list[str] = typer.Option(
+        None,
+        "--follow-up-line",
+        help="Repeat to append follow-up bullet lines.",
+    ),
+    trace_dir: Path = typer.Option(
+        TRACE_DIR,
+        "--trace-dir",
+        help="Trace directory for the new checkpoint.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .trace_runtime import create_trace_checkpoint
+
+    report = create_trace_checkpoint(
+        title=title,
+        summary_lines=summary_line or [],
+        verification_lines=verification_line or [],
+        follow_up_lines=follow_up_line or [],
+        trace_dir=trace_dir.expanduser().resolve(),
+    )
+    payload = report.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_trace_checkpoint(payload))
+
+
+@app.command("check-fonts")
+def check_fonts(
+    docx: Optional[Path] = typer.Option(
+        None,
+        "--docx",
+        help="Optional explicit target docx. Defaults to manifests/baseline.yml",
+    ),
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Path to the baseline manifest YAML.",
+    ),
+    output_dir: Path = typer.Option(
+        FONT_AUDIT_DIR,
+        "--output-dir",
+        help="Directory for generated font audit reports.",
+    ),
+    expected_font: str = typer.Option(
+        "Times New Roman",
+        "--expected-font",
+        help="Expected explicit run font for the audit.",
+    ),
+) -> None:
+    from .font_audit import render_font_audit_markdown, scan_docx_fonts
+
+    target_docx, _, _ = resolve_target_context(docx, baseline_manifest)
+    ensure_dir(output_dir)
+
+    report = scan_docx_fonts(target_docx, expected_font=expected_font)
+    write_json(output_dir / "font_audit.json", report.model_dump(mode="json"))
+    write_markdown(output_dir / "font_audit.md", render_font_audit_markdown(report))
+    write_markdown(
+        output_dir / "font_audit_summary.md",
+        render_font_audit_summary(report.model_dump(mode="json")),
+    )
+
+    console.print(
+        f"Scanned fonts in {target_docx}; explicit other-font runs: {report.explicit_other_font_runs}."
+    )
+
+
+@app.command("check-outline")
+def check_outline(
+    docx: Optional[Path] = typer.Option(
+        None,
+        "--docx",
+        help="Optional explicit target docx. Defaults to manifests/baseline.yml",
+    ),
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Path to the baseline manifest YAML.",
+    ),
+    output_dir: Path = typer.Option(
+        OUTLINE_AUDIT_DIR,
+        "--output-dir",
+        help="Directory for generated outline audit reports.",
+    ),
+) -> None:
+    from .outline_audit import render_outline_audit_markdown, scan_docx_outline
+
+    target_docx, _, _ = resolve_target_context(docx, baseline_manifest)
+    ensure_dir(output_dir)
+
+    report = scan_docx_outline(target_docx)
+    write_json(output_dir / "outline_audit.json", report.model_dump(mode="json"))
+    write_markdown(output_dir / "outline_audit.md", render_outline_audit_markdown(report))
+    write_markdown(
+        output_dir / "outline_audit_summary.md",
+        render_outline_audit_summary(report.model_dump(mode="json")),
+    )
+
+    console.print(
+        f"Scanned outline in {target_docx}; headings: {report.heading_count}, appendix headings: {report.appendix_heading_count}."
+    )
+
+
+@app.command("check-candidate")
+def check_candidate(
+    docx: Path = typer.Option(
+        ...,
+        "--docx",
+        help="Candidate output docx to audit.",
+    ),
+    source: Path = typer.Option(
+        DEFAULT_BUILD_SOURCE,
+        "--source",
+        help="Structured build source used to produce the candidate.",
+    ),
+    write_contract: Path = typer.Option(
+        DEFAULT_WRITE_CONTRACT_MANIFEST,
+        "--write-contract",
+        help="Write contract YAML used to produce the candidate.",
+    ),
+    output_dir: Path = typer.Option(
+        CANDIDATE_AUDIT_DIR,
+        "--output-dir",
+        help="Directory for generated candidate audit reports.",
+    ),
+) -> None:
+    from .candidate_audit import build_candidate_audit, render_candidate_audit_markdown
+
+    target_docx = docx.expanduser().resolve()
+    ensure_dir(output_dir)
+
+    report = build_candidate_audit(
+        target_docx,
+        build_source_path=source,
+        write_contract_path=write_contract,
+    )
+    write_json(output_dir / "candidate_audit.json", report.model_dump(mode="json"))
+    write_markdown(output_dir / "candidate_audit.md", render_candidate_audit_markdown(report))
+    write_markdown(
+        output_dir / "candidate_audit_summary.md",
+        render_candidate_audit_summary(report.model_dump(mode="json")),
+    )
+
+    error_count = sum(1 for finding in report.findings if finding.severity == "error")
+    warning_count = sum(1 for finding in report.findings if finding.severity == "warning")
+    console.print(
+        f"Audited candidate {target_docx}; {error_count} error(s), {warning_count} warning(s)."
+    )
+
+
+@app.command("assemble-sections")
+def assemble_sections(
+    output_source: Path = typer.Option(
+        DEFAULT_SECTION_BUILD_SOURCE,
+        "--output-source",
+        help="Generated build-source YAML path.",
+    ),
+    snippets_manifest: Path = typer.Option(
+        DEFAULT_SNIPPETS_MANIFEST,
+        "--snippets-manifest",
+        help="Optional snippets manifest YAML path. Defaults to manifests/snippets.yml.",
+    ),
+) -> None:
+    from .manifest_loader import load_figures_manifest, load_sections_manifest, load_snippets_manifest
+    from .section_assembler import assemble_sections_manifest, write_build_source_yaml
+
+    sections_manifest = load_sections_manifest()
+    figures_manifest = load_figures_manifest()
+    snippets = load_snippets_manifest(snippets_manifest.expanduser().resolve())
+    build_source = assemble_sections_manifest(
+        sections_manifest,
+        figures_manifest=figures_manifest,
+        snippets_manifest=snippets,
+    )
+    resolved_output = output_source.expanduser().resolve()
+    ensure_dir(resolved_output.parent)
+    write_build_source_yaml(build_source, resolved_output)
+    summary_json_path, summary_markdown_path = section_summary_paths(resolved_output)
+    build_source_payload = build_source.model_dump(mode="json")
+    write_json(summary_json_path, build_source_payload)
+    write_markdown(
+        summary_markdown_path,
+        render_section_assembly_summary(build_source_payload, output_path=resolved_output),
+    )
+    if is_within_directory(resolved_output, BUILD_SOURCES_DIR):
+        ensure_dir(BUILD_SOURCES_DIR)
+        write_json(BUILD_SOURCES_DIR / "assembled_sections_summary.json", build_source_payload)
+        write_markdown(
+            BUILD_SOURCES_DIR / "assembled_sections_summary.md",
+            render_section_assembly_summary(build_source_payload, output_path=resolved_output),
+        )
+
+    console.print(f"Assembled section-managed build source at {resolved_output}")
+
+
+@app.command("check-snippets")
+def check_snippets(
+    snippets_manifest: Path = typer.Option(
+        DEFAULT_SNIPPETS_MANIFEST,
+        "--snippets-manifest",
+        help="Path to the snippets manifest YAML.",
+    ),
+    output_dir: Path = typer.Option(
+        SNIPPET_AUDIT_DIR,
+        "--output-dir",
+        help="Directory for generated snippet audit reports.",
+    ),
+) -> None:
+    from .snippet_audit import build_snippet_audit, render_snippet_audit_markdown
+
+    resolved_manifest = snippets_manifest.expanduser().resolve()
+    ensure_dir(output_dir)
+
+    report = build_snippet_audit(resolved_manifest)
+    write_json(output_dir / "snippet_audit.json", report.model_dump(mode="json"))
+    write_markdown(output_dir / "snippet_audit.md", render_snippet_audit_markdown(report))
+    write_markdown(
+        output_dir / "snippet_audit_summary.md",
+        render_snippet_audit_summary(report.model_dump(mode="json")),
+    )
+
+    error_count = sum(1 for finding in report.findings if finding.severity == "error")
+    warning_count = sum(1 for finding in report.findings if finding.severity == "warning")
+    console.print(
+        f"Audited snippets from {resolved_manifest}; {error_count} error(s), {warning_count} warning(s)."
+    )
+
+
+@app.command("run-section-pipeline")
+def run_section_pipeline_command(
+    output_dir: Path = typer.Option(
+        SECTION_PIPELINE_DIR,
+        "--output-dir",
+        help="Directory for sequential section build, candidate audit, and validation outputs.",
+    ),
+) -> None:
+    from .section_pipeline import run_section_pipeline
+
+    resolved_output_dir = output_dir.expanduser().resolve()
+    ensure_dir(resolved_output_dir)
+
+    report = run_section_pipeline(pipeline_dir=resolved_output_dir)
+    write_json(
+        resolved_output_dir / "section_pipeline_summary.json",
+        report.model_dump(mode="json"),
+    )
+    write_markdown(
+        resolved_output_dir / "section_pipeline_summary.md",
+        render_section_pipeline_summary(report.model_dump(mode="json")),
+    )
+
+    console.print(
+        "Ran section pipeline sequentially: "
+        f"candidate {report.candidate_error_count} error(s), {report.candidate_warning_count} warning(s); "
+        f"validation {report.validation_error_count} error(s), {report.validation_warning_count} warning(s)."
+    )
+
+
+@app.command("publish-run")
+def publish_run_command(
+    run_dir: Path = typer.Option(
+        SECTION_PIPELINE_DIR,
+        "--run-dir",
+        help="Run directory to publish.",
+    ),
+    output_dir: Path = typer.Option(
+        PUBLISHED_DIR,
+        "--output-dir",
+        help="Directory for canonical published metadata.",
+    ),
+) -> None:
+    from .publication import publish_run
+
+    resolved_run_dir = run_dir.expanduser().resolve()
+    resolved_output_dir = output_dir.expanduser().resolve()
+    ensure_dir(resolved_output_dir)
+
+    manifest = publish_run(run_dir=resolved_run_dir, published_dir=resolved_output_dir)
+    write_markdown(
+        resolved_output_dir / "current_summary.md",
+        render_published_run_summary(manifest.model_dump(mode="json")),
+    )
+
+    console.print(
+        f"Published run {manifest.published_id} from {resolved_run_dir} into {resolved_output_dir}."
+    )
+
+
+@app.command("index-trace")
+def index_trace(
+    trace_dir: Path = typer.Option(
+        TRACE_DIR,
+        "--trace-dir",
+        help="Trace directory to catalog.",
+    ),
+) -> None:
+    from .trace_indexer import build_trace_index_report, write_trace_index
+
+    resolved_trace_dir = trace_dir.expanduser().resolve()
+    report = build_trace_index_report(resolved_trace_dir)
+    write_trace_index(report, trace_dir=resolved_trace_dir)
+    write_markdown(
+        resolved_trace_dir / "checkpoint_catalog_summary.md",
+        render_trace_catalog_summary(report.model_dump(mode="json")),
+    )
+
+    console.print(
+        f"Indexed trace {resolved_trace_dir}; {report.checkpoint_count} checkpoint(s), latest {report.latest_checkpoint_id}."
+    )
+
+
+@app.command("revision-extract-anchors", hidden=True)
+def revision_extract_anchors(
+    candidate: Path = typer.Option(
+        ...,
+        "--candidate",
+        help="Candidate output docx to inspect for live revision anchors.",
+    ),
+    run_dir: Path = typer.Option(
+        ...,
+        "--run-dir",
+        help="Run directory under outputs/revision_runs for revision artifacts.",
+    ),
+    issue_ledger: Path = typer.Option(
+        DEFAULT_REVISION_ISSUE_LEDGER,
+        "--issue-ledger",
+        help="Issue ledger YAML path.",
+    ),
+    issue_id: list[str] = typer.Option(
+        None,
+        "--issue-id",
+        help="Optional issue id to target. Repeat for multiple issues.",
+    ),
+) -> None:
+    raise typer.BadParameter("Legacy revision CLI has been retired from the active OfficeX runtime.")
+
+
+@app.command("revision-build-patch", hidden=True)
+def revision_build_patch(
+    run_dir: Path = typer.Option(
+        ...,
+        "--run-dir",
+        help="Run directory containing live_anchor_snapshot.json and receiving the patch spec.",
+    ),
+    issue_ledger: Path = typer.Option(
+        DEFAULT_REVISION_ISSUE_LEDGER,
+        "--issue-ledger",
+        help="Issue ledger YAML path.",
+    ),
+    anchor_snapshot: Optional[Path] = typer.Option(
+        None,
+        "--anchor-snapshot",
+        help="Optional explicit live anchor snapshot path.",
+    ),
+    issue_id: list[str] = typer.Option(
+        None,
+        "--issue-id",
+        help="Optional issue id to target. Repeat for multiple issues.",
+    ),
+) -> None:
+    raise typer.BadParameter("Legacy revision CLI has been retired from the active OfficeX runtime.")
+
+
+@app.command("revision-apply-patch", hidden=True)
+def revision_apply_patch(
+    candidate: Path = typer.Option(
+        ...,
+        "--candidate",
+        help="Candidate output docx to patch.",
+    ),
+    run_dir: Path = typer.Option(
+        ...,
+        "--run-dir",
+        help="Run directory containing revision_patch_spec.yml and receiving execution reports.",
+    ),
+    patch_spec: Optional[Path] = typer.Option(
+        None,
+        "--patch-spec",
+        help="Optional explicit patch spec path.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and simulate the patch without saving the candidate.",
+    ),
+) -> None:
+    raise typer.BadParameter("Legacy revision CLI has been retired from the active OfficeX runtime.")
+
+
+@app.command("revision-audit", hidden=True)
+def revision_audit(
+    candidate: Path = typer.Option(
+        ...,
+        "--candidate",
+        help="Candidate output docx to audit after apply.",
+    ),
+    run_dir: Path = typer.Option(
+        ...,
+        "--run-dir",
+        help="Run directory containing revision execution artifacts.",
+    ),
+    issue_ledger: Path = typer.Option(
+        DEFAULT_REVISION_ISSUE_LEDGER,
+        "--issue-ledger",
+        help="Issue ledger YAML path.",
+    ),
+    baseline_manifest: Path = typer.Option(
+        DEFAULT_BASELINE_MANIFEST,
+        "--baseline-manifest",
+        help="Baseline manifest YAML path used to verify the protected original hash.",
+    ),
+    patch_spec: Optional[Path] = typer.Option(
+        None,
+        "--patch-spec",
+        help="Optional explicit patch spec path.",
+    ),
+    execution_report: Optional[Path] = typer.Option(
+        None,
+        "--execution-report",
+        help="Optional explicit execution report path.",
+    ),
+) -> None:
+    raise typer.BadParameter("Legacy revision CLI has been retired from the active OfficeX runtime.")
+
+
+def main() -> None:
+    app()
+
+
+if __name__ == "__main__":
+    main()
