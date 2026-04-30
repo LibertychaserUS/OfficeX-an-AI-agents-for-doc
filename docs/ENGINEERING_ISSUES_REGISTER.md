@@ -18,12 +18,13 @@ promoted into roadmap work.
 - Platform-local smoke environment: healthy
 - Local smoke result:
   - `check-package`: pass
-  - `pytest -q`: `80 passed`
+  - `pytest -q`: `168 passed`
+  - `desktop/bun run check`: pass
   - local wheel build: pass
 - Active platform root:
   - `/Users/nihao/Documents/Playground/document-ops-system`
-- Archived historical product root:
-  - `/Users/nihao/Documents/Playground/archive/products/loopmart/LoopMart-GU2-rebuild`
+- External historical archive root:
+  - `/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground`
 
 ## Active Blockers
 
@@ -98,14 +99,26 @@ promoted into roadmap work.
 - Prevention:
   - when product identity changes, update fixtures and tests in the same change
 
-## Archived-Case Reference
+### DOS-005 Desktop settings tests wrote to the real user Library path
 
-Archived case-specific issues were moved to:
-
-- [GU2_CASE_ISSUES_REGISTER.md](/Users/nihao/Documents/Playground/document-ops-system/docs/archive/case_studies/gu2/GU2_CASE_ISSUES_REGISTER.md)
-
-The active engineering register should only keep the cross-case platform risks
-that still influence current OfficeX design.
+- Status: resolved
+- Symptom:
+  - `desktop/bun run check` failed under sandboxed execution
+  - `src/tests/settingsStore.test.ts` attempted to create
+    `/Users/nihao/Library/Application Support/OfficeX`
+- Root cause:
+  - the desktop settings layer depended on an import-time home-path constant
+  - Bun test module loading allowed `actionPlans` to be loaded before the test
+    mock, so the test hit the real machine path instead of an isolated temp
+    path
+- Resolution:
+  - switched the desktop settings path to a runtime resolver using
+    `OFFICEX_SETTINGS_DIR`
+  - updated the desktop settings tests to use an isolated temp settings
+    directory through the environment instead of a brittle module mock
+- Prevention:
+  - keep machine-local paths runtime-resolved rather than import-time frozen
+  - prefer environment-based test isolation for desktop local-state code
 
 ### CASE-003 Cross-renderer document stability
 
@@ -136,7 +149,7 @@ that still influence current OfficeX design.
 ### RISK-002 Archive boundary violations
 
 - Current state:
-  - historical LoopMart workspace is preserved for audit
+  - historical materials live outside the active OfficeX repository
 - Risk:
   - future work may accidentally edit archived material or reuse archived
     runtime assets

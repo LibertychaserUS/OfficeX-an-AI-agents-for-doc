@@ -33,6 +33,16 @@ def test_build_provider_prompt_binding_uses_default_model_and_cognition():
 
     assert binding.model_id == "gpt-5.4"
     assert binding.provider_id == "openai"
+    assert [entry.ref for entry in binding.prompt_manifest] == [
+        "prompts/OFFICEX_COGNITION.md",
+        "prompts/ORCHESTRATOR.md",
+    ]
+    assert len(binding.resolved_rule_refs) == 2
+    assert binding.prompt_trace_record.prompt_source_refs == [
+        "prompts/OFFICEX_COGNITION.md",
+        "prompts/ORCHESTRATOR.md",
+    ]
+    assert binding.compiled_prompt_debug == binding.prompt
     assert "You are `OfficeX`." in binding.prompt
     assert "# Orchestrator Prompt" in binding.prompt
 
@@ -44,6 +54,8 @@ def test_build_provider_prompt_binding_can_render_role_only():
         include_cognition=False,
     )
 
+    assert [entry.ref for entry in binding.prompt_manifest] == ["prompts/ORCHESTRATOR.md"]
+    assert len(binding.resolved_rule_refs) == 1
     assert "You are `OfficeX`." not in binding.prompt
     assert "# Orchestrator Prompt" in binding.prompt
 
@@ -122,6 +134,13 @@ def test_build_provider_request_envelope_uses_task_packet_path(tmp_path: Path):
     assert envelope.required_config_fields == ["api_key", "model_id"]
     assert envelope.provided_config_fields == ["api_key", "model_id"]
     assert envelope.response_contract_kind == "plan_object"
+    assert envelope.prompt_manifest[0].ref == "prompts/OFFICEX_COGNITION.md"
+    assert envelope.resolved_rule_refs[1].section_title == "Orchestrator Prompt"
+    assert envelope.prompt_trace_record.prompt_source_refs == [
+        "prompts/OFFICEX_COGNITION.md",
+        "prompts/ORCHESTRATOR.md",
+    ]
+    assert envelope.compiled_prompt_debug == envelope.system_prompt
     assert "You are `OfficeX`." in envelope.system_prompt
 
 
@@ -331,6 +350,13 @@ def test_officex_provider_build_request_command_outputs_machine_readable_envelop
     assert payload["required_config_fields"] == ["api_key", "model_id"]
     assert payload["provided_config_fields"] == ["api_key", "model_id"]
     assert payload["response_contract_kind"] == "plan_object"
+    assert payload["prompt_manifest"][0]["ref"] == "prompts/OFFICEX_COGNITION.md"
+    assert payload["resolved_rule_refs"][1]["section_title"] == "Orchestrator Prompt"
+    assert payload["prompt_trace_record"]["prompt_source_refs"] == [
+        "prompts/OFFICEX_COGNITION.md",
+        "prompts/ORCHESTRATOR.md",
+    ]
+    assert payload["compiled_prompt_debug"] == payload["system_prompt"]
 
 
 def test_officex_provider_build_request_command_supports_task_packet_path_and_explicit_model(tmp_path: Path):
@@ -375,6 +401,8 @@ def test_officex_provider_build_request_command_supports_task_packet_path_and_ex
     assert "OfficeX Provider Request Envelope" in result.stdout
     assert "Response contract: `plan_object`" in result.stdout
     assert "Model: `claude-sonnet-4-5`" in result.stdout
+    assert "Prompt Manifest" in result.stdout
+    assert "`role` -> `prompts/ORCHESTRATOR.md` (`orchestrator`)" in result.stdout
 
 
 def test_officex_provider_build_request_command_rejects_invalid_config_field(tmp_path: Path):

@@ -4,6 +4,13 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from tools.report_scaffold_v3.cli import app
+from tools.report_scaffold_v3.product_models import (
+    OfficeXDoctorCheck,
+    OfficeXDoctorReport,
+    OfficeXRenderBoundaryReport,
+    OfficeXRenderBoundaryScenario,
+    OfficeXRendererEnvironmentProfile,
+)
 
 
 def test_officex_workspace_init_creates_manifest_and_dirs(tmp_path: Path):
@@ -153,6 +160,106 @@ def test_officex_task_run_docx_mvp_as_json_outputs_run_summary(tmp_path: Path):
     payload = json.loads(result.stdout)
     assert payload["run_id"] == "json-run"
     assert Path(payload["candidate_docx"]).exists()
+
+
+def test_officex_doctor_as_json_outputs_machine_readable_report(monkeypatch, tmp_path: Path):
+    runner = CliRunner()
+
+    monkeypatch.setattr(
+        "tools.report_scaffold_v3.doctor_runtime.build_doctor_report",
+        lambda workspace_root, sandbox_root, desktop_shell_dir=None: OfficeXDoctorReport(
+            report_id="doctor-demo",
+            overall_status="pass",
+            platform="darwin",
+            workspace_root=workspace_root,
+            sandbox_root=sandbox_root,
+            machine_settings_dir=tmp_path / "settings",
+            desktop_shell_dir=desktop_shell_dir or (tmp_path / "desktop"),
+            recommended_next_action="Open OfficeX app.",
+            checks=[
+                OfficeXDoctorCheck(
+                    check_id="word_app",
+                    title="Microsoft Word",
+                    status="pass",
+                    summary="Microsoft Word detected.",
+                )
+            ],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "officex",
+            "doctor",
+            "--workspace-root",
+            str(tmp_path / "workspace"),
+            "--sandbox-root",
+            str(tmp_path / "sandboxes"),
+            "--as-json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["report_id"] == "doctor-demo"
+    assert payload["overall_status"] == "pass"
+    assert Path(payload["report_json_path"]).exists()
+
+
+def test_officex_render_boundary_as_json_outputs_machine_readable_report(monkeypatch, tmp_path: Path):
+    runner = CliRunner()
+
+    monkeypatch.setattr(
+        "tools.report_scaffold_v3.render_boundary_runtime.build_render_boundary_report",
+        lambda workspace_root, sandbox_root: OfficeXRenderBoundaryReport(
+            report_id="render-boundary-demo",
+            overall_status="warning",
+            workspace_root=workspace_root,
+            sandbox_root=sandbox_root,
+            machine_settings_dir=tmp_path / "settings",
+            renderer_profile=OfficeXRendererEnvironmentProfile(
+                renderer_id="microsoft_word",
+                display_name="Microsoft Word",
+                detected=True,
+                acceptance_role="primary",
+            ),
+            capability_matrix={"replace_text": {"short": "pass"}},
+            residual_risk_notes=["Long-document drift still requires manual review."],
+            scenarios=[
+                OfficeXRenderBoundaryScenario(
+                    scenario_id="short-plain",
+                    document_length="short",
+                    structure_profile="plain_text",
+                    operation_profile="replace_text",
+                    status="pass",
+                    localization_confidence=0.95,
+                    patch_applicability_confidence=0.95,
+                    requires_human_review=False,
+                    notes=["Stable."],
+                )
+            ],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "officex",
+            "render-boundary",
+            "--workspace-root",
+            str(tmp_path / "workspace"),
+            "--sandbox-root",
+            str(tmp_path / "sandboxes"),
+            "--as-json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["report_id"] == "render-boundary-demo"
+    assert payload["renderer_profile"]["renderer_id"] == "microsoft_word"
+    assert Path(payload["report_json_path"]).exists()
 
 
 def test_officex_task_inspect_requires_resolution_input():

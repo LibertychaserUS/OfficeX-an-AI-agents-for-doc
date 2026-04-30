@@ -15,3 +15,5 @@
 - `2026-04-12`: machine-readable `agent_catalog` was added to the active runtime, and the OfficeX runtime CLI surface expanded to `workspace / agent / trace`.
 - `2026-04-12`: OfficeX runtime CLI surface was hardened with machine-readable JSON outputs, runtime task-packet inspection helpers, full regression coverage, and active trace checkpoint support.
 - `2026-04-12`: provider request envelopes were added as a dry-run runtime contract, and active onboarding docs were shifted further toward the OfficeX runtime surface.
+- `2026-04-22`: OfficeX desktop frontstage shifted from a readiness-first launcher to an intake-first workbench with machine-local workspace/thread state, confirmation-card intake, a three-column renderer shell, and in-dock utility actions plus execution artifacts.
+- `2026-04-22`: frontstage regression verification passed through `cd desktop && bun test src/tests/rendererMarkup.test.tsx src/tests/taskIntake.test.ts src/tests/workbenchStateStore.test.ts src/tests/workbenchBootstrap.test.ts src/tests/actionPlans.test.ts src/tests/settingsStore.test.ts src/tests/sidecar.test.ts` -> `35 pass`, plus `cd desktop && bun run typecheck`.

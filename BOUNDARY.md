@@ -8,10 +8,10 @@ This platform owns only the files inside:
 
 ## Protected External References
 
-The following paths may be read as historical or reference material but are
+The following path may be read as historical or reference material but is
 read-only by default:
 
-- `/Users/nihao/Documents/Playground/archive/products/loopmart`
+- `/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground`
 
 Case-specific external sample documents may exist outside the platform root, but
 they must be treated as:

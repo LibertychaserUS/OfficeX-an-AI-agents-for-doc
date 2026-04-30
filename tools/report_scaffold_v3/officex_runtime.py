@@ -139,7 +139,7 @@ def _build_docx_mvp_task_packet(
         ],
         blocked_surfaces=[
             str(baseline_target_docx),
-            "/Users/nihao/Documents/Playground/archive/products/loopmart",
+            "/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground",
         ],
         input_artifacts=[
             sandbox.source_reference_docx,

@@ -96,7 +96,7 @@ The platform is organized as:
 
 Archived product workspaces live under:
 
-- `/Users/nihao/Documents/Playground/archive/products/loopmart`
+- `/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground`
 
 They remain available for future review and audit, but they are not the active
 platform project.

@@ -380,6 +380,37 @@ class OfficeXDocxMvpRunReport(BaseModel):
     validation_warning_count: int
 
 
+class OfficeXPromptManifestEntry(BaseModel):
+    layer: Literal["cognition", "role"]
+    prompt_id: str
+    ref: str
+
+
+class OfficeXResolvedPromptRef(BaseModel):
+    layer: Literal["cognition", "role"]
+    prompt_id: str
+    ref: str
+    source_path: Path
+    section_title: str
+    content_sha256: str
+
+
+class OfficeXPromptTraceRecord(BaseModel):
+    role: str
+    include_cognition: bool = True
+    prompt_source_refs: list[str] = Field(default_factory=list)
+    compiled_prompt_sha256: str
+
+
+class OfficeXCompiledPromptBundle(BaseModel):
+    role: str
+    include_cognition: bool = True
+    prompt_manifest: list[OfficeXPromptManifestEntry] = Field(default_factory=list)
+    resolved_rule_refs: list[OfficeXResolvedPromptRef] = Field(default_factory=list)
+    compiled_prompt_debug: str
+    prompt_trace_record: OfficeXPromptTraceRecord
+
+
 class OfficeXProviderPromptBinding(BaseModel):
     provider_id: str
     provider_display_name: str
@@ -396,6 +427,10 @@ class OfficeXProviderPromptBinding(BaseModel):
     latency_class: Literal["low", "medium", "high"] = "medium"
     config_fields: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    prompt_manifest: list[OfficeXPromptManifestEntry] = Field(default_factory=list)
+    resolved_rule_refs: list[OfficeXResolvedPromptRef] = Field(default_factory=list)
+    compiled_prompt_debug: str
+    prompt_trace_record: OfficeXPromptTraceRecord
     prompt: str
 
 
@@ -412,6 +447,10 @@ class OfficeXProviderRequestEnvelope(BaseModel):
     task_family: str
     approval_mode: ApprovalMode = "ask_every_conflict"
     system_prompt: str
+    prompt_manifest: list[OfficeXPromptManifestEntry] = Field(default_factory=list)
+    resolved_rule_refs: list[OfficeXResolvedPromptRef] = Field(default_factory=list)
+    compiled_prompt_debug: str
+    prompt_trace_record: OfficeXPromptTraceRecord
     input_artifacts: list[Path] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
     acceptance_gates: list[str] = Field(default_factory=list)

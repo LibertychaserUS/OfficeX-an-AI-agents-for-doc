@@ -34,6 +34,7 @@ Use these documents for:
 - [DEVELOPMENT_COMMAND_AGENT_KNOWLEDGEPACK_MODEL.md](/Users/nihao/Documents/Playground/document-ops-system/docs/development/DEVELOPMENT_COMMAND_AGENT_KNOWLEDGEPACK_MODEL.md)
 - [DEVELOPMENT_TELEMETRY_AND_HOTSPOTS.md](/Users/nihao/Documents/Playground/document-ops-system/docs/development/DEVELOPMENT_TELEMETRY_AND_HOTSPOTS.md)
 - [CROSS_MODEL_DEVELOPMENT_REVIEW.md](/Users/nihao/Documents/Playground/document-ops-system/docs/development/CROSS_MODEL_DEVELOPMENT_REVIEW.md)
+- [OFFICEX_APP_MVP_EXECUTION_PLAN_2026-04-21.md](/Users/nihao/Documents/Playground/document-ops-system/docs/development/OFFICEX_APP_MVP_EXECUTION_PLAN_2026-04-21.md)
 
 ## Boundary Rule
 

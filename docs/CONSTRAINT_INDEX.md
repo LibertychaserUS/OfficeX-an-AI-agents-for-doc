@@ -100,6 +100,21 @@ Write to:
 Write to:
 
 - [docs/blueprints/DESKTOP_RUNTIME_CONTRACT.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/DESKTOP_RUNTIME_CONTRACT.md)
+- [docs/blueprints/OFFICEX_MACOS_APP_DISTRIBUTION_BOUNDARY.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_MACOS_APP_DISTRIBUTION_BOUNDARY.md)
+
+### Development Execution Plan Or Milestone Archive
+
+Write to:
+
+- [docs/development/INDEX.md](/Users/nihao/Documents/Playground/document-ops-system/docs/development/INDEX.md)
+
+### Product Entry Or First-Launch Rule
+
+Write to:
+
+- [docs/blueprints/DESKTOP_RUNTIME_CONTRACT.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/DESKTOP_RUNTIME_CONTRACT.md)
+- [ACTIVE_RULES_AND_PATHS.md](/Users/nihao/Documents/Playground/document-ops-system/docs/ACTIVE_RULES_AND_PATHS.md)
+- [README.md](/Users/nihao/Documents/Playground/document-ops-system/README.md)
 
 ### Runtime CLI Surface Or Command Contract
 

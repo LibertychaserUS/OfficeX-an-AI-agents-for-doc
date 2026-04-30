@@ -4,10 +4,6 @@ Current source template:
 
 - [officex_docx_mvp_template.docx](/Users/nihao/Documents/Playground/document-ops-system/imports/samples/officex_docx_mvp_template.docx)
 
-Legacy case-specific style records were archived to:
-
-- [TEMPLATE_STYLE_CONTRACT.gu2.md](/Users/nihao/Documents/Playground/document-ops-system/docs/archive/legacy_templates/TEMPLATE_STYLE_CONTRACT.gu2.md)
-
 ## Purpose
 
 This contract records the effective page, style, font, size, alignment, and

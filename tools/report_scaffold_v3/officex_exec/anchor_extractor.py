@@ -121,6 +121,7 @@ def _build_paragraph_anchor(
 def _extract_paragraph_anchor(
     paragraph_entries: list[ParagraphScanEntry],
     *,
+    issue_id: str,
     candidate_path: Path,
     candidate_hash: str,
     rule: OfficeXParagraphAnchorRule,
@@ -142,7 +143,7 @@ def _extract_paragraph_anchor(
     if len(matches) == 1:
         entry = matches[0]
         return _build_paragraph_anchor(
-            issue_id=rule.issue_id,
+            issue_id=issue_id,
             anchor_role=rule.anchor_role,
             candidate_path=candidate_path,
             candidate_hash=candidate_hash,
@@ -159,7 +160,7 @@ def _extract_paragraph_anchor(
 
     if not matches:
         return _build_paragraph_anchor(
-            issue_id=rule.issue_id,
+            issue_id=issue_id,
             anchor_role=rule.anchor_role,
             candidate_path=candidate_path,
             candidate_hash=candidate_hash,
@@ -177,7 +178,7 @@ def _extract_paragraph_anchor(
     indices = [entry.index for entry in matches]
     first = matches[0]
     return _build_paragraph_anchor(
-        issue_id=rule.issue_id,
+        issue_id=issue_id,
         anchor_role=rule.anchor_role,
         candidate_path=candidate_path,
         candidate_hash=candidate_hash,
@@ -196,6 +197,7 @@ def _extract_paragraph_anchor(
 def _extract_table_cell_anchor(
     document: Document,
     *,
+    issue_id: str,
     candidate_path: Path,
     candidate_hash: str,
     rule: OfficeXTableCellAnchorRule,
@@ -231,8 +233,8 @@ def _extract_table_cell_anchor(
         return OfficeXLiveAnchorRecord(
             candidate_path=candidate_path,
             candidate_hash=candidate_hash,
-            issue_id=rule.issue_id,
-            anchor_id=_anchor_id(rule.issue_id, rule.anchor_role, location_hint, cell_text),
+            issue_id=issue_id,
+            anchor_id=_anchor_id(issue_id, rule.anchor_role, location_hint, cell_text),
             anchor_role=rule.anchor_role,
             block_kind="table_cell",
             location_hint=location_hint,
@@ -255,8 +257,8 @@ def _extract_table_cell_anchor(
         return OfficeXLiveAnchorRecord(
             candidate_path=candidate_path,
             candidate_hash=candidate_hash,
-            issue_id=rule.issue_id,
-            anchor_id=_anchor_id(rule.issue_id, rule.anchor_role, "missing", rule.anchor_role),
+            issue_id=issue_id,
+            anchor_id=_anchor_id(issue_id, rule.anchor_role, "missing", rule.anchor_role),
             anchor_role=rule.anchor_role,
             block_kind="table_cell",
             location_hint="missing",
@@ -278,8 +280,8 @@ def _extract_table_cell_anchor(
     return OfficeXLiveAnchorRecord(
         candidate_path=candidate_path,
         candidate_hash=candidate_hash,
-        issue_id=rule.issue_id,
-        anchor_id=_anchor_id(rule.issue_id, rule.anchor_role, location_hint, cell_text),
+        issue_id=issue_id,
+        anchor_id=_anchor_id(issue_id, rule.anchor_role, location_hint, cell_text),
         anchor_role=rule.anchor_role,
         block_kind="table_cell",
         location_hint=location_hint,
@@ -312,10 +314,11 @@ def build_officex_live_anchor_snapshot(
     anchors: list[OfficeXLiveAnchorRecord] = []
     findings: list[str] = []
 
-    for rule in anchor_rules:
+    for issue_id, rule in zip(issue_ids, anchor_rules):
         if isinstance(rule, OfficeXParagraphAnchorRule):
             anchor = _extract_paragraph_anchor(
                 paragraph_entries,
+                issue_id=issue_id,
                 candidate_path=resolved_candidate,
                 candidate_hash=candidate_hash,
                 rule=rule,
@@ -323,6 +326,7 @@ def build_officex_live_anchor_snapshot(
         else:
             anchor = _extract_table_cell_anchor(
                 document,
+                issue_id=issue_id,
                 candidate_path=resolved_candidate,
                 candidate_hash=candidate_hash,
                 rule=rule,

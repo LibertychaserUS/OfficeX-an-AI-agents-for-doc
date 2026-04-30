@@ -15,4 +15,3 @@ process and architecture changes from becoming silent drift.
 Current ADRs:
 
 - [0001-role-semantics-and-canonical-publication.md](/Users/nihao/Documents/Playground/document-ops-system/docs/adr/0001-role-semantics-and-canonical-publication.md)
-- [0002-revision-sidecar-and-controlled-patch-mainline.md](/Users/nihao/Documents/Playground/document-ops-system/docs/adr/0002-revision-sidecar-and-controlled-patch-mainline.md)

@@ -18,7 +18,7 @@ def test_parse_figure_caption_extracts_id():
 
 def test_parse_appendix_figure_caption_extracts_id():
     parsed = parse_figure_caption(
-        "Appendix Figure A2: Full ER Diagram - LoopMart Database Schema"
+        "Appendix Figure A2: Full ER Diagram - Inventory Database Schema"
     )
     assert parsed is not None
     assert parsed["label"] == "Appendix Figure"

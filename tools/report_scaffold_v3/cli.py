@@ -16,6 +16,7 @@ from .paths import (
     DEFAULT_AGENT_CATALOG_MANIFEST,
     DEFAULT_BASELINE_MANIFEST,
     DEFAULT_BUILD_SOURCE,
+    DEFAULT_OFFICEX_DESKTOP_SHELL_DIR,
     DEFAULT_SNIPPETS_MANIFEST,
     DEFAULT_SECTION_BUILD_SOURCE,
     DEFAULT_PROVIDER_CATALOG_MANIFEST,
@@ -27,8 +28,6 @@ from .paths import (
     SNIPPET_AUDIT_DIR,
     TRACE_DIR,
     VALIDATION_DIR,
-    DEFAULT_REVISION_ISSUE_LEDGER,
-    REVISION_RUNS_DIR,
     SANDBOXES_DIR,
     WORKSPACES_DIR,
 )
@@ -281,6 +280,21 @@ def render_officex_provider_binding(report: dict, *, include_prompt: bool) -> st
         f"- Long context: `{report['supports_long_context']}`",
         f"- Latency class: `{report['latency_class']}`",
     ]
+    if report["prompt_manifest"]:
+        lines.extend(["", "## Prompt Manifest", ""])
+        for entry in report["prompt_manifest"]:
+            lines.append(
+                f"- `{entry['layer']}` -> `{entry['ref']}` (`{entry['prompt_id']}`)"
+            )
+    if report["resolved_rule_refs"]:
+        lines.extend(["", "## Resolved Prompt Refs", ""])
+        for entry in report["resolved_rule_refs"]:
+            lines.append(
+                "- "
+                f"`{entry['section_title']}` "
+                f"from `{entry['ref']}` "
+                f"(sha256 `{entry['content_sha256'][:12]}`...)"
+            )
     if report["config_fields"]:
         lines.extend(["", "## Config Fields", ""])
         for field_name in report["config_fields"]:
@@ -290,7 +304,7 @@ def render_officex_provider_binding(report: dict, *, include_prompt: bool) -> st
         for note in report["notes"]:
             lines.append(f"- {note}")
     if include_prompt:
-        lines.extend(["", "## Prompt", "", report["prompt"].rstrip()])
+        lines.extend(["", "## Compiled Prompt Debug", "", report["compiled_prompt_debug"].rstrip()])
     return "\n".join(lines)
 
 
@@ -314,6 +328,7 @@ def render_officex_provider_request(report: dict) -> str:
         f"- Task family: `{report['task_family']}`",
         f"- Approval mode: `{report['approval_mode']}`",
         f"- Response contract: `{report['response_contract_kind']}`",
+        f"- Prompt layers: {len(report['prompt_manifest'])}",
         "",
         "## Config Coverage",
         "",
@@ -321,6 +336,72 @@ def render_officex_provider_request(report: dict) -> str:
         f"- Provided fields: {', '.join(report['provided_config_fields']) if report['provided_config_fields'] else '[none]'}",
         f"- Missing required fields: {', '.join(missing_fields) if missing_fields else 'none'}",
     ]
+    if report["prompt_manifest"]:
+        lines.extend(["", "## Prompt Manifest", ""])
+        for entry in report["prompt_manifest"]:
+            lines.append(
+                f"- `{entry['layer']}` -> `{entry['ref']}` (`{entry['prompt_id']}`)"
+            )
+    return "\n".join(lines)
+
+
+def render_officex_doctor_report(report: dict) -> str:
+    lines = [
+        "# OfficeX Doctor",
+        "",
+        f"- Overall status: `{report['overall_status']}`",
+        f"- Platform: `{report['platform']}`",
+        f"- Workspace root: `{report['workspace_root']}`",
+        f"- Sandbox root: `{report['sandbox_root']}`",
+        f"- Next action: {report['recommended_next_action']}",
+        "",
+    ]
+    for check in report["checks"]:
+        lines.extend(
+            [
+                f"## {check['title']}",
+                "",
+                f"- Status: `{check['status']}`",
+                f"- Summary: {check['summary']}",
+            ]
+        )
+        if check["detail_lines"]:
+            lines.append("- Details:")
+            lines.extend([f"  - {line}" for line in check["detail_lines"]])
+        if check["remediation"]:
+            lines.append("- Remediation:")
+            lines.extend([f"  - {line}" for line in check["remediation"]])
+        lines.append("")
+    return "\n".join(lines)
+
+
+def render_officex_render_boundary_report(report: dict) -> str:
+    lines = [
+        "# OfficeX Render Boundary",
+        "",
+        f"- Overall status: `{report['overall_status']}`",
+        f"- Renderer: `{report['renderer_profile']['display_name']}`",
+        f"- Renderer detected: `{report['renderer_profile']['detected']}`",
+        f"- Renderer version: `{report['renderer_profile']['version'] or '[unknown]'}`",
+        "",
+        "## Scenarios",
+        "",
+    ]
+    if not report["scenarios"]:
+        lines.append("- No executable scenarios were run.")
+    else:
+        for scenario in report["scenarios"]:
+            lines.append(
+                "- "
+                f"`{scenario['scenario_id']}` "
+                f"/ `{scenario['document_length']}` "
+                f"/ `{scenario['operation_profile']}` "
+                f"/ `{scenario['status']}`"
+            )
+    if report["residual_risk_notes"]:
+        lines.extend(["", "## Residual Risks", ""])
+        for note in report["residual_risk_notes"]:
+            lines.append(f"- {note}")
     return "\n".join(lines)
 
 
@@ -819,6 +900,81 @@ def officex_sandbox_create(
         console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
         return
     console.print(render_officex_sandbox_created(manifest.run_id, manifest.sandbox_root))
+
+
+@officex_app.command("doctor")
+def officex_doctor(
+    workspace_root: Path = typer.Option(
+        WORKSPACES_DIR / "default",
+        "--workspace-root",
+        help="Workspace root used for environment readiness checks.",
+    ),
+    sandbox_root: Path = typer.Option(
+        SANDBOXES_DIR,
+        "--sandbox-root",
+        help="Sandbox root used for smoke and boundary checks.",
+    ),
+    desktop_shell_dir: Path = typer.Option(
+        DEFAULT_OFFICEX_DESKTOP_SHELL_DIR,
+        "--desktop-shell-dir",
+        help="Desktop shell directory used by the OfficeX app launcher.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .doctor_runtime import build_doctor_report, persist_doctor_report
+
+    report = persist_doctor_report(
+        build_doctor_report(
+        workspace_root=workspace_root.expanduser().resolve(),
+        sandbox_root=sandbox_root.expanduser().resolve(),
+        desktop_shell_dir=desktop_shell_dir.expanduser().resolve(),
+        )
+    )
+    payload = report.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_doctor_report(payload))
+
+
+@officex_app.command("render-boundary")
+def officex_render_boundary(
+    workspace_root: Path = typer.Option(
+        WORKSPACES_DIR / "default",
+        "--workspace-root",
+        help="Workspace root used for generated boundary fixtures.",
+    ),
+    sandbox_root: Path = typer.Option(
+        SANDBOXES_DIR,
+        "--sandbox-root",
+        help="Sandbox root used for render-boundary runs.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .render_boundary_runtime import (
+        build_render_boundary_report,
+        persist_render_boundary_report,
+    )
+
+    report = persist_render_boundary_report(
+        build_render_boundary_report(
+            workspace_root=workspace_root.expanduser().resolve(),
+            sandbox_root=sandbox_root.expanduser().resolve(),
+        )
+    )
+    payload = report.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    console.print(render_officex_render_boundary_report(payload))
 
 
 @officex_task_app.command("run-docx-mvp")
@@ -1436,8 +1592,9 @@ def check_outline(
         render_outline_audit_summary(report.model_dump(mode="json")),
     )
 
+    console.print(f"Scanned outline in {target_docx}")
     console.print(
-        f"Scanned outline in {target_docx}; headings: {report.heading_count}, appendix headings: {report.appendix_heading_count}."
+        f"Headings: {report.heading_count}; appendix headings: {report.appendix_heading_count}."
     )
 
 
@@ -1647,120 +1804,6 @@ def index_trace(
     console.print(
         f"Indexed trace {resolved_trace_dir}; {report.checkpoint_count} checkpoint(s), latest {report.latest_checkpoint_id}."
     )
-
-
-@app.command("revision-extract-anchors", hidden=True)
-def revision_extract_anchors(
-    candidate: Path = typer.Option(
-        ...,
-        "--candidate",
-        help="Candidate output docx to inspect for live revision anchors.",
-    ),
-    run_dir: Path = typer.Option(
-        ...,
-        "--run-dir",
-        help="Run directory under outputs/revision_runs for revision artifacts.",
-    ),
-    issue_ledger: Path = typer.Option(
-        DEFAULT_REVISION_ISSUE_LEDGER,
-        "--issue-ledger",
-        help="Issue ledger YAML path.",
-    ),
-    issue_id: list[str] = typer.Option(
-        None,
-        "--issue-id",
-        help="Optional issue id to target. Repeat for multiple issues.",
-    ),
-) -> None:
-    raise typer.BadParameter("Legacy revision CLI has been retired from the active OfficeX runtime.")
-
-
-@app.command("revision-build-patch", hidden=True)
-def revision_build_patch(
-    run_dir: Path = typer.Option(
-        ...,
-        "--run-dir",
-        help="Run directory containing live_anchor_snapshot.json and receiving the patch spec.",
-    ),
-    issue_ledger: Path = typer.Option(
-        DEFAULT_REVISION_ISSUE_LEDGER,
-        "--issue-ledger",
-        help="Issue ledger YAML path.",
-    ),
-    anchor_snapshot: Optional[Path] = typer.Option(
-        None,
-        "--anchor-snapshot",
-        help="Optional explicit live anchor snapshot path.",
-    ),
-    issue_id: list[str] = typer.Option(
-        None,
-        "--issue-id",
-        help="Optional issue id to target. Repeat for multiple issues.",
-    ),
-) -> None:
-    raise typer.BadParameter("Legacy revision CLI has been retired from the active OfficeX runtime.")
-
-
-@app.command("revision-apply-patch", hidden=True)
-def revision_apply_patch(
-    candidate: Path = typer.Option(
-        ...,
-        "--candidate",
-        help="Candidate output docx to patch.",
-    ),
-    run_dir: Path = typer.Option(
-        ...,
-        "--run-dir",
-        help="Run directory containing revision_patch_spec.yml and receiving execution reports.",
-    ),
-    patch_spec: Optional[Path] = typer.Option(
-        None,
-        "--patch-spec",
-        help="Optional explicit patch spec path.",
-    ),
-    dry_run: bool = typer.Option(
-        False,
-        "--dry-run",
-        help="Validate and simulate the patch without saving the candidate.",
-    ),
-) -> None:
-    raise typer.BadParameter("Legacy revision CLI has been retired from the active OfficeX runtime.")
-
-
-@app.command("revision-audit", hidden=True)
-def revision_audit(
-    candidate: Path = typer.Option(
-        ...,
-        "--candidate",
-        help="Candidate output docx to audit after apply.",
-    ),
-    run_dir: Path = typer.Option(
-        ...,
-        "--run-dir",
-        help="Run directory containing revision execution artifacts.",
-    ),
-    issue_ledger: Path = typer.Option(
-        DEFAULT_REVISION_ISSUE_LEDGER,
-        "--issue-ledger",
-        help="Issue ledger YAML path.",
-    ),
-    baseline_manifest: Path = typer.Option(
-        DEFAULT_BASELINE_MANIFEST,
-        "--baseline-manifest",
-        help="Baseline manifest YAML path used to verify the protected original hash.",
-    ),
-    patch_spec: Optional[Path] = typer.Option(
-        None,
-        "--patch-spec",
-        help="Optional explicit patch spec path.",
-    ),
-    execution_report: Optional[Path] = typer.Option(
-        None,
-        "--execution-report",
-        help="Optional explicit execution report path.",
-    ),
-) -> None:
-    raise typer.BadParameter("Legacy revision CLI has been retired from the active OfficeX runtime.")
 
 
 def main() -> None:

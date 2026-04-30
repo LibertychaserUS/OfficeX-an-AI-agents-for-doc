@@ -8,7 +8,7 @@ without confusing it with archived product workspaces.
 ## Active Roots
 
 - platform root: `/Users/nihao/Documents/Playground/document-ops-system`
-- archived case root: `/Users/nihao/Documents/Playground/archive/products/loopmart`
+- historical external archive root: `/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground`
 
 ## Navigation Principle
 

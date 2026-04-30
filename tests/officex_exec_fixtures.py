@@ -18,7 +18,7 @@ def create_officex_exec_fixture(
 
     section_heading = document.add_paragraph("Business Model Analysis")
     section_heading.style = "Heading 2"
-    document.add_paragraph("LoopMart-like placeholder text is not used here; this is a neutral OfficeX execution fixture.")
+    document.add_paragraph("This is a neutral OfficeX execution fixture paragraph used for anchor and patch tests.")
 
     document.add_paragraph(
         "To provide a structured assessment, this paragraph anchors the prefix-based review and patch flow."

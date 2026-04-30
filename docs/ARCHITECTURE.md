@@ -28,7 +28,7 @@ The preferred layer order is:
 5. modular audits and benchmarks
 6. sanctioned orchestration
 7. release and replay
-8. roadmap and archived cases
+8. roadmap and external historical references
 
 ## Design Principles
 
@@ -49,16 +49,32 @@ The current MVP frame is:
 - target compatibility: Microsoft Word
 - truth model: `platform truth + Office mirror`
 - collaboration mode: human-first with scoped adaptive autonomy
+- top product entry: `officex`
+- first app shell shape: intake-first macOS desktop workbench
 - page profile: explicit, with `A4` treated as a managed constraint when
   required by the deliverable
 
 ## Core Runtime Layers
 
+### Product Entry Layer
+
+- `officex` console entry
+- desktop-app launcher
+- intake-first desktop workbench
+- machine-local settings boundary
+- bounded action routing for `doctor`, `render-boundary`, and controlled task runs
+
 ### Surface Layer
 
 - desktop-first app shell
-- hybrid review canvas
-- Office-like document mirror for familiar human editing and review
+- left workspace and thread rail
+- center intake and document surface
+- right chat, confirmation, and utility dock
+- initial thread state: blank chat intake followed by task confirmation card
+- utility actions and candidate/report viewing inside the workbench flow
+- first-launch setup remains machine-local and secondary to task intake
+- later hybrid review canvas
+- later Office-like document mirror for familiar human editing and review
 
 ### Runtime Layer
 
@@ -87,6 +103,8 @@ Detailed agent typing and runtime fan-out rules live in:
 - compliance audit
 - render audit
 - visual anomaly checks
+- environment-readiness audit
+- renderer-boundary benchmark
 
 ### State Layer
 
@@ -100,6 +118,16 @@ Detailed agent typing and runtime fan-out rules live in:
 - provider adapters
 
 ## Execution Modes
+
+### Product Readiness
+
+Use this when the main goal is to determine whether the current Mac, provider
+environment, and renderer setup are ready for OfficeX.
+
+The current concrete actions are:
+
+- `officex doctor`
+- `officex render-boundary`
 
 ### Structured Generation
 
@@ -124,4 +152,4 @@ updated in a controlled way.
 
 Archived product workspaces live under:
 
-- `/Users/nihao/Documents/Playground/archive/products/loopmart`
+- `/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground`

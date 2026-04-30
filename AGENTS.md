@@ -92,7 +92,7 @@ The platform owns only files inside:
 
 Archived product workspaces are read-only by default, including:
 
-- `/Users/nihao/Documents/Playground/archive/products/loopmart`
+- `/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground`
 
 ## Compatibility Rule
 

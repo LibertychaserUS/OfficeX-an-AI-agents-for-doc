@@ -32,6 +32,7 @@ The active platform rules are:
 - [docs/blueprints/PROVIDER_ADAPTER_CONTRACT.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/PROVIDER_ADAPTER_CONTRACT.md)
 - [manifests/provider_catalog.yml](/Users/nihao/Documents/Playground/document-ops-system/manifests/provider_catalog.yml)
 - [docs/blueprints/DESKTOP_RUNTIME_CONTRACT.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/DESKTOP_RUNTIME_CONTRACT.md)
+- [docs/blueprints/OFFICEX_MACOS_APP_DISTRIBUTION_BOUNDARY.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_MACOS_APP_DISTRIBUTION_BOUNDARY.md)
 - [docs/blueprints/RELEASE_BASELINE_AND_BACKUP_POLICY.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/RELEASE_BASELINE_AND_BACKUP_POLICY.md)
 - [docs/blueprints/DEVELOPMENT_RETROSPECTIVE_PROTOCOL.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/DEVELOPMENT_RETROSPECTIVE_PROTOCOL.md)
 - [docs/blueprints/ARTIFACT_GRAPH_SCHEMA.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/ARTIFACT_GRAPH_SCHEMA.md)
@@ -67,6 +68,10 @@ trace files unless the task is explicitly historical.
 
 Current supported OfficeX runtime command families are:
 
+- `officex`
+- `officex doctor`
+- `officex render-boundary`
+- `officex runtime`
 - `officex workspace`
 - `officex sandbox`
 - `officex task`
@@ -77,6 +82,10 @@ Current supported OfficeX runtime command families are:
 
 Preferred runtime entrypoints currently include:
 
+- `officex`
+- `officex doctor`
+- `officex render-boundary`
+- `officex runtime task run-docx-mvp`
 - `officex workspace init`
 - `officex sandbox create`
 - `officex task run-docx-mvp`
@@ -96,6 +105,21 @@ Legacy root commands such as `build-word`, `validate-word`, and
 `run-section-pipeline` remain available only as deterministic compatibility
 primitives.
 
+The active app-shell development root is:
+
+- `/Users/nihao/Documents/Playground/document-ops-system/desktop`
+
+Treat this as the current Electron+Bun macOS shell for the OfficeX first app
+MVP.
+
+## Machine-Local Product State
+
+The current OfficeX app MVP stores machine-local settings under:
+
+- `/Users/nihao/Library/Application Support/OfficeX`
+
+Treat this as local product state, not as project authority.
+
 ## Active Sandboxes
 
 The active document-editing sandbox root is:
@@ -114,11 +138,11 @@ Edit here by default:
 Treat this as the only active platform workspace unless the user explicitly
 asks for a different target.
 
-## Archived Product Workspace
+## Historical External Archive
 
 Read-only by default:
 
-- `/Users/nihao/Documents/Playground/archive/products/loopmart/LoopMart-GU2-rebuild`
+- `/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground`
 
 Use this only for:
 
@@ -126,9 +150,6 @@ Use this only for:
 - historical review
 - case-study reference
 - recovery of old evidence
-
-Archived case-study docs inside `/Users/nihao/Documents/Playground/document-ops-system/docs/archive`
-are also read-only by default.
 
 ## Reference Corpus
 
@@ -151,14 +172,6 @@ The previous root governance files were snapshotted to:
 - `/Users/nihao/Documents/Playground/meta_archive/gu2_governance_2026-04-11`
 
 These are historical records, not active rules.
-
-## Removed Legacy Archive
-
-The deleted legacy archive is recorded at:
-
-- [docs/archive/LOOPMART_LEGACY_ARCHIVE_TOMBSTONE.md](/Users/nihao/Documents/Playground/document-ops-system/docs/archive/LOOPMART_LEGACY_ARCHIVE_TOMBSTONE.md)
-
-Do not recreate or depend on the removed path.
 
 ## Compatibility Names
 

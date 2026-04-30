@@ -40,7 +40,7 @@ trigger_groups:
     paths:
       - /Users/nihao/Documents/Playground/document-ops-system/docs/PRODUCT_ROADMAP.md
       - /Users/nihao/Documents/Playground/document-ops-system/manifests/navigation_catalog.yml
-      - /Users/nihao/Documents/Playground/archive/products/loopmart/ARCHIVE_NOTE.md
+      - /Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground
   - trigger_group_id: external_reference_corpus
     description: Refresh external-reference indexes when official or secondary benchmark repositories are updated.
     paths:

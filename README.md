@@ -15,6 +15,7 @@ The current MVP focus is:
 - `docx` only
 - Microsoft Word-compatible output
 - desktop-first human-in-the-loop workflow
+- first app MVP path: `officex` product entry plus Electron desktop shell
 
 ## Compatibility Note
 
@@ -48,6 +49,7 @@ Python 3.11:
 /opt/homebrew/bin/python3.11 -m venv .venv
 .venv/bin/python --version
 .venv/bin/pip install -r requirements.lock.txt
+.venv/bin/pip install -e .
 ```
 
 Primary smoke commands:
@@ -60,6 +62,8 @@ Primary smoke commands:
 Useful OfficeX runtime commands:
 
 ```bash
+.venv/bin/officex doctor --workspace-root /tmp/officex-workspaces --sandbox-root /tmp/officex-sandboxes --desktop-shell-dir /Users/nihao/Documents/Playground/document-ops-system/desktop --as-json
+.venv/bin/officex render-boundary --workspace-root /tmp/officex-workspaces --sandbox-root /tmp/officex-sandboxes --as-json
 .venv/bin/python -m tools.report_scaffold_v3.cli officex workspace init --workspace-id demo --workspace-root /tmp/officex-workspaces --as-json
 .venv/bin/python -m tools.report_scaffold_v3.cli officex sandbox create --run-id demo-run --sandbox-root /tmp/officex-sandboxes --as-json
 .venv/bin/python -m tools.report_scaffold_v3.cli officex task run-docx-mvp --run-id demo-run --sandbox-root /tmp/officex-sandboxes --as-json
@@ -72,6 +76,22 @@ Useful OfficeX runtime commands:
 .venv/bin/python -m tools.report_scaffold_v3.cli officex trace checkpoint --title "checkpoint title"
 .venv/bin/python -m tools.report_scaffold_v3.cli index-trace
 ```
+
+Desktop-shell development entry:
+
+```bash
+cd desktop
+bun install
+bun run app
+```
+
+The current app MVP is not a full document workbench. It is a product entry
+surface that:
+
+- checks whether this Mac is ready
+- runs `doctor`
+- runs `render-boundary`
+- launches one controlled `docx` task and exposes candidate/report artifacts
 
 Legacy root commands such as `build-word` and `validate-word` remain callable as
 deterministic compatibility primitives, but they are not the preferred OfficeX

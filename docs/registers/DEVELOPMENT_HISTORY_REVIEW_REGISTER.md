@@ -218,6 +218,35 @@ Detailed history remains in local checkpoints.
   - the old anchor extractor was too tightly coupled to issue-profile lookup,
     so a generic rule-based extraction helper had to be introduced before the
     OfficeX runtime could reuse it cleanly
+
+### Stage: Desktop Startup Truth Recovery
+
+- status: active history
+- scope:
+  - OfficeX app empty-shell incident
+  - preload bootstrap failure diagnosis
+  - desktop startup observability hardening
+- what worked:
+  - real Electron logs were collected instead of trusting `typecheck` and build
+    success as evidence of product readiness
+  - the app was verified through the real product surface, not only through CLI
+    smoke commands
+  - preload-format and preload-path issues were narrowed quickly once startup
+    logs were allowed to speak
+- what failed or was misread:
+  - earlier work treated a passing `bun run check` as too close to “desktop
+    shell is fine,” which hid the real startup defect
+  - renderer failures could previously degrade into a blank window with no
+    user-facing explanation
+  - desktop action/execution types were expanded before the implementation was
+    fully brought back into contract, which temporarily left the shell in a
+    type-drift state
+- carry forward:
+  - do not accept build success as proof of product-entry readiness
+  - keep startup diagnostics and visible renderer failure states in place as a
+    permanent desktop baseline
+  - whenever the desktop surface changes, verify at least one real in-app
+    action rather than stopping at static checks
 - carry forward:
   - keep free-text review parsing and rubric compilation out of the runtime
     until the structured review-ledger contract is stable
@@ -285,6 +314,35 @@ Detailed history remains in local checkpoints.
     provider dispatch
   - move the main test surface toward OfficeX-native runtime behavior rather
     than legacy revision fixtures
+
+### Stage: App MVP Readiness Hardening
+
+- status: active history
+- scope:
+  - doctor/report persistence
+  - desktop readiness gating
+  - product-entry invocation hardening
+- what worked:
+  - `doctor` and `render-boundary` now leave behind stable JSON/Markdown
+    evidence instead of ephemeral terminal output
+  - desktop readiness is now anchored to a real matching `doctor` result for
+    the current workspace/sandbox pair
+  - the desktop sidecar path now calls `product_entry` directly, preserving the
+    product-facing surface instead of binding the app to the raw CLI root
+- what failed or was misread:
+  - the first desktop bootstrap treated Python detection as equivalent to
+    product readiness, which was too optimistic
+  - switching the desktop shell onto
+    `python -m tools.report_scaffold_v3.product_entry` exposed that the module
+    lacked a `__main__` entry and therefore did nothing when launched that way
+  - sandboxed verification in Codex cannot write to
+    `~/Library/Application Support/OfficeX`, so local smoke required
+    `OFFICEX_SETTINGS_DIR=/tmp/...` during validation
+- carry forward:
+  - keep machine-local diagnostics file-backed and reopenable from the app
+  - do not mark the product ready unless the latest matching `doctor` result
+    passes the core checks
+  - keep product entry and raw legacy CLI invocation paths distinct
 
 ### Stage: Development Workflow Optimization Layer
 
@@ -409,6 +467,74 @@ Detailed history remains in local checkpoints.
     inventing a second ad hoc reporting lane
   - add larger document and visual stress benchmarks separately when the render
     audit lane is ready
+
+### Stage: Provider Prompt Compiler Structure
+
+- status: active history
+- scope:
+  - replace opaque provider prompt concatenation with a first explicit prompt
+    compiler shape
+  - emit prompt manifest refs, resolved prompt refs, compiled prompt debug, and
+    prompt trace metadata through provider bindings and request envelopes
+  - make human-readable provider output show prompt layers rather than only one
+    undifferentiated prompt blob
+- what worked:
+  - provider prompt assembly now keeps the compiled prompt as a debug artifact
+    while exposing refs and hashes for audit and future narrowing
+  - the provider request envelope remains backward-compatible through
+    `system_prompt`, but now also carries prompt manifest, resolved refs, and a
+    prompt trace record
+  - the old `check-outline` CLI output regression was fixed during this slice,
+    bringing the full suite back to green
+- what failed or was misread:
+  - the provider layer is still not a full DSL; this slice introduces the
+    compiler shape, but imports remain markdown-file level rather than
+    section-level rule imports
+  - the CLI is still an operator/runtime surface, not an interactive product
+    shell; this slice clarified that but did not change the overall CLI product
+    posture
+- carry forward:
+  - narrow prompt refs from whole markdown files to section-level imports
+  - add provider-targeted compile passes instead of one universal compiled
+    prompt output
+  - keep compiled prompt text available for debug, but treat prompt manifests
+    and trace records as the real long-term authority shape
+
+### Stage: First App MVP Product Entry And Desktop Shell
+
+- status: active history
+- scope:
+  - cut a real `officex` product entry instead of relying only on Python module
+    paths
+  - add `doctor` and `render-boundary` as first-class OfficeX product actions
+  - scaffold the first Electron+Bun macOS shell with a readiness-first home
+  - keep settings machine-local and out of product authority files
+- what worked:
+  - the new `officex` entry now routes to the desktop shell and exposes
+    `doctor`, `render-boundary`, and `runtime ...` on the product-facing path
+  - `officex doctor` now checks Python/package integrity, Bun, desktop shell,
+    Word, workspace/sandbox writability, provider state, and a smoke run
+  - `officex render-boundary` now produces a Word-first capability matrix over
+    short, medium, long, and ultra-long scenarios
+  - the new `desktop/` shell builds and tests locally, and its actions map back
+    into the active OfficeX runtime rather than inventing a second backend lane
+  - desktop settings persistence was corrected to use a machine-local override
+    path in tests rather than writing into the real user Library path
+- what failed or was misread:
+  - the first desktop-shell test pass from the isolated implementation lane did
+    not hold under the full local Bun run because the settings directory logic
+    still froze the real user path too early
+  - that failure was not architectural; it was a runtime-boundary bug caused by
+    constant-path resolution instead of call-time path resolution
+  - the app shell is still local-development infrastructure, not a signed or
+    notarization-ready macOS distribution artifact
+- carry forward:
+  - keep the first app MVP narrow around readiness, boundary evidence, and one
+    controlled `docx` task before expanding into a heavier workbench
+  - define bundle id, entitlements, hardened runtime, and notarization posture
+    before making macOS distribution claims
+  - expand render-boundary scenario coverage before presenting paragraph-level
+    results as a broader editing guarantee
 
 ## Update Rule
 

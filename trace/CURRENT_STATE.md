@@ -22,15 +22,44 @@
   commands now exist as callable runtime code
 - Current provider-envelope posture: dry-run provider request envelopes can now
   be assembled from provider catalogs, role prompts, and runtime task packets
-- Current patch-bridge posture: OfficeX patch bundles can now be bridged into
-  the deterministic revision executor for bounded paragraph-level `docx`
-  mutation
+- Current patch-bridge posture: OfficeX patch bundles are being moved onto a
+  native OfficeX execution core for bounded paragraph-level `docx` mutation
 - Current review-prep posture: structured manual review JSON can now be
-  normalized into an OfficeX review ledger and resolved into a
-  revision-compatible live anchor snapshot
+  normalized into an OfficeX review ledger and resolved into a live anchor
+  snapshot
 - Current development-workflow posture: a dedicated development-governance
   layer now exists under `docs/development` for development memory, telemetry,
   and cross-model review without redefining product runtime authority
+- Current app-entry posture: a real `officex` console entry now exists and can
+  route to `doctor`, `render-boundary`, runtime commands, or the desktop shell
+- Current desktop-shell posture: an Electron+Bun macOS app scaffold now exists
+  under `desktop/` as an intake-first three-column OfficeX workbench with
+  preload IPC, machine-local workspace/thread state, confirmation-card intake,
+  and in-shell utility actions for `doctor`, `render-boundary`, and one
+  controlled `docx` run
+- Current doctor posture: `officex doctor` now performs package, Bun, desktop,
+  Word, workspace, sandbox, provider, and smoke-run checks, and now persists
+  machine-readable JSON/Markdown reports plus latest-report pointers under the
+  machine-local OfficeX settings root
+- Current render-boundary posture: `officex render-boundary` now emits a
+  Word-first renderer environment report and scenario-based capability matrix,
+  and now persists report artifacts plus fixture/benchmark paths for audit
+- Current product-entry invocation posture: desktop actions now call
+  `tools.report_scaffold_v3.product_entry` directly so product-facing commands
+  no longer depend on the raw legacy CLI root
+- Current desktop-hardening posture: product-entry exit codes, sidecar spawn
+  failures, machine-local settings writes, renderer save-settings errors, and
+  `open-path` validation are now hardened for the current desktop MVP
+- Current desktop-startup posture: the Electron shell now resolves preload
+  outputs correctly, records startup diagnostics under the machine-local
+  OfficeX log root, and no longer collapses bridge or render failures into a
+  blank background-only window
+- Current desktop-execution-log posture: app-triggered actions now persist
+  `execution.json`, `stdout.log`, and `stderr.log` artifacts under the
+  machine-local OfficeX runtime log root
+- Current external-review posture: CodeRabbit agent authentication is now live
+  on this machine and review CLI execution has been validated against the
+  active OfficeX repository
 - Current runtime-cleanup posture: low-risk backend-runtime deduplication is
   underway and currently preserving all active OfficeX CLI/runtime contracts
 - Current CLI-cleanup posture: OfficeX-facing patch command wording has been
@@ -38,7 +67,8 @@
   separate hardening slice
 - Current runtime-observability posture: `run_docx_mvp` now emits a lightweight
   run-event log beside the existing stage-history review
-- Historical case context: `GU2 LoopMart` is archived, not active, and no longer used as the default CLI baseline
+- Historical case context lives outside the active OfficeX repository and is
+  not part of the current default runtime path
 - Current sandbox posture: platform-owned document-edit sandbox root established for mutable session copies
 
 ## Current Priorities
@@ -53,9 +83,9 @@
   catalog and callable prompt runtime
 - stabilize the new patch-bundle bridge before broadening into layout repair,
   figures, or richer patch scopes
-- connect OfficeX review-ledger prep to future patch-bundle drafting so patch
-  generation no longer depends on the old revision CLI workflow
-- replace legacy-heavy revision regression coverage with OfficeX-native runtime
+- connect OfficeX review-ledger prep to future patch-bundle drafting through
+  the OfficeX execution core
+- keep replacing legacy-heavy regression coverage with OfficeX-native runtime
   tests as the new review-ledger and patch-bundle flows mature
 - benchmark Codex and Claude runtime patterns before deeper runtime rewrites
 - maintain a clean active-path model for daily development
@@ -70,10 +100,16 @@
   hardening stage
 - keep extending OfficeX-native runtime regression coverage with realistic
   length profiles before broadening visual benchmark coverage
+- harden the first app MVP around product entry, machine-local settings,
+  `doctor`, `render-boundary`, and one controlled app-triggered `docx` run
+- keep the current Electron shell local-development only until explicit macOS
+  signing, entitlements, and notarization boundaries are defined
 
 ## Known Blockers
 
-- None for local smoke checks
+- no provider credentials are configured in the current environment, so live
+  provider dispatch remains unavailable even though dry-run envelopes and
+  package-level checks pass
 
 ## Recent Verification
 
@@ -83,7 +119,7 @@
 - `.python-version` now tracks `3.11`
 - `requirements.lock.txt` updated to keep `typer==0.23.2` compatible with the
   Python 3.11 runtime by raising `click` to `8.2.1`
-- `pytest -q`: `156 passed`
+- `pytest -q`: `168 passed`
 - local wheel build: pass
 - archived `.venv` remains historical and should not be used for active execution
 - active blueprint, review-anchor protocol, visual-audit policy, editor decision,
@@ -154,6 +190,67 @@
   - `officex task extract-anchors --as-json`
 - agent catalog is now machine-readable and tracked at:
   - `/Users/nihao/Documents/Playground/document-ops-system/manifests/agent_catalog.yml`
+- desktop shell local verification passed at:
+  - `cd desktop && bun run check`
+- editable product entry installation passed at:
+  - `.venv/bin/pip install -e /Users/nihao/Documents/Playground/document-ops-system`
+- new focused Python verification passed:
+  - `60 passed`
+- product-entry routing smoke passed through:
+  - `.venv/bin/officex doctor --workspace-root /tmp/officex-console-workspace --sandbox-root /tmp/officex-console-sandboxes --desktop-shell-dir /Users/nihao/Documents/Playground/document-ops-system/desktop --as-json`
+- product-entry runtime passthrough smoke passed through:
+  - `.venv/bin/officex runtime task inspect --help`
+- product-entry render-boundary smoke passed through:
+  - `.venv/bin/officex render-boundary --workspace-root /tmp/officex-app-workspace --sandbox-root /tmp/officex-app-sandboxes --as-json`
+- desktop doctor smoke passed through:
+  - `.venv/bin/python -m tools.report_scaffold_v3.cli officex doctor --workspace-root /tmp/officex-app-mvp-workspace --sandbox-root /tmp/officex-app-mvp-sandboxes --desktop-shell-dir /Users/nihao/Documents/Playground/document-ops-system/desktop --as-json`
+- desktop render-boundary smoke passed through:
+  - `.venv/bin/python -m tools.report_scaffold_v3.cli officex render-boundary --workspace-root /tmp/officex-app-mvp-workspace --sandbox-root /tmp/officex-app-mvp-sandboxes --as-json`
+- app-backed controlled docx run smoke passed through:
+  - `.venv/bin/python -m tools.report_scaffold_v3.cli officex task run-docx-mvp --run-id app-mvp-demo --sandbox-root /tmp/officex-app-mvp-sandboxes --as-json`
+- local doctor result currently warns only on missing provider credentials
+- local trace indexing passed through:
+  - `.venv/bin/python -m tools.report_scaffold_v3.cli index-trace`
+- local render-boundary result currently reports:
+  - pass on short replace-text and medium insert-paragraph scenarios
+  - warning on long restyle and ultra-long replace-text scenarios
+  - Word detected at `/Applications/Microsoft Word.app` with version `16.108`
+- readiness hardening verification passed for:
+  - latest `doctor` reports now persist to machine-local archived and latest
+    JSON/Markdown paths
+  - desktop bootstrap now stays on `doctor` until the latest matching doctor
+    result passes core checks
+  - desktop product actions now run through
+    `python -m tools.report_scaffold_v3.product_entry ...`
+- post-hardening focused verification passed for:
+  - `./.venv/bin/pytest tests/test_product_entry.py tests/test_doctor_runtime.py tests/test_render_boundary_runtime.py tests/test_runtime_surface_cli.py -q` -> `28 passed`
+  - `OFFICEX_SETTINGS_DIR=/tmp/officex-app-settings ./.venv/bin/python -m tools.report_scaffold_v3.product_entry doctor --workspace-root /tmp/officex-app-mvp-workspace --sandbox-root /tmp/officex-app-mvp-sandboxes --desktop-shell-dir /Users/nihao/Documents/Playground/document-ops-system/desktop --as-json`
+  - `OFFICEX_SETTINGS_DIR=/tmp/officex-app-settings ./.venv/bin/python -m tools.report_scaffold_v3.product_entry render-boundary --workspace-root /tmp/officex-app-mvp-workspace --sandbox-root /tmp/officex-app-mvp-sandboxes --as-json`
+  - `OFFICEX_SETTINGS_DIR=/tmp/officex-app-settings ./.venv/bin/python -m tools.report_scaffold_v3.product_entry runtime task run-docx-mvp --run-id app-mvp-post-fix --sandbox-root /tmp/officex-app-mvp-sandboxes --approval-mode ask_every_conflict --as-json`
+- sandboxed Codex verification currently requires `OFFICEX_SETTINGS_DIR` to be
+  redirected into `/tmp/...` because this execution environment cannot write to
+  `~/Library/Application Support/OfficeX`; the product target remains
+  machine-local Application Support outside the sandbox
+- real machine-local verification is now also confirmed outside the sandbox for:
+  - `doctor` writing to `/Users/nihao/Library/Application Support/OfficeX`
+  - `render-boundary` writing to `/Users/nihao/Library/Application Support/OfficeX`
+- CodeRabbit CLI verification now also passed for:
+  - `coderabbit auth login --agent`
+  - `coderabbit review --agent -t uncommitted -c AGENTS.md -c PROJECT.md`
+  - review completed with `21` findings
+- latest desktop hardening verification passed for:
+  - `./.venv/bin/pytest tests/test_product_entry.py -q` -> `7 passed`
+  - `cd desktop && bun test` -> `15 pass`
+  - `cd desktop && bun run check` -> pass
+- empty-shell recovery verification passed for:
+  - `cd desktop && ELECTRON_ENABLE_LOGGING=1 ELECTRON_ENABLE_STACK_DUMPING=1 bun run app`
+  - real app inspection confirmed OfficeX home content renders instead of an
+    empty shell
+  - in-app `检查这台 Mac` execution completed and surfaced doctor plus
+    execution-log artifacts
+- intake-first workbench verification passed for:
+  - `cd desktop && bun test src/tests/rendererMarkup.test.tsx src/tests/taskIntake.test.ts src/tests/workbenchStateStore.test.ts src/tests/workbenchBootstrap.test.ts src/tests/actionPlans.test.ts src/tests/settingsStore.test.ts src/tests/sidecar.test.ts` -> `35 pass`
+  - `cd desktop && bun run typecheck`
 
 ## Trace State
 
@@ -178,6 +275,8 @@
   cleanup recorded in `CHECKPOINT_13`
 - OfficeX patch-bundle bridge and runtime patch application surface recorded in
   `CHECKPOINT_14`
+- OfficeX desktop empty-shell recovery and in-app doctor verification recorded
+  in `CHECKPOINT_25`
 - OfficeX review-ledger and runtime anchor-prep surface recorded in
   `CHECKPOINT_15`
 - OfficeX Python 3.11 baseline uplift and environment rebuild recorded in
@@ -188,5 +287,13 @@
 - backend runtime boundary tightening recorded in `CHECKPOINT_19`
 - runtime length-profile regression and event logging recorded in
   `CHECKPOINT_20`
-- Historical GU2 and LoopMart checkpoints remain in the archived product workspace
+- provider prompt compiler structure and CLI clarification recorded in
+  `CHECKPOINT_21`
+- first app MVP product entry, desktop shell, doctor, and render-boundary
+  recorded in `CHECKPOINT_22`
+- app MVP readiness hardening and report persistence recorded in
+  `CHECKPOINT_23`
+- real machine-local verification, CodeRabbit activation, and desktop shell
+  hardening recorded in `CHECKPOINT_24`
+- Historical legacy checkpoints remain outside the active OfficeX repository
 - Platform trace indexes should be regenerated from the local trace root only

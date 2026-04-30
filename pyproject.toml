@@ -22,6 +22,7 @@ dependencies = [
 ]
 
 [project.scripts]
+officex = "tools.report_scaffold_v3.product_entry:entrypoint"
 document-ops-system = "tools.report_scaffold_v3.cli:main"
 report-scaffold-v3 = "tools.report_scaffold_v3.cli:main"
 

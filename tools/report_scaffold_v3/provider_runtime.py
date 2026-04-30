@@ -5,6 +5,7 @@ from typing import get_args
 
 from .manifest_loader import load_provider_catalog
 from .models import (
+    OfficeXCompiledPromptBundle,
     OfficeXProviderRequestEnvelope,
     OfficeXProviderPromptBinding,
     ProviderCatalogEntryManifest,
@@ -13,7 +14,7 @@ from .models import (
     ProviderResponseContractKind,
 )
 from .paths import DEFAULT_PROVIDER_CATALOG_MANIFEST
-from .prompt_runtime import compose_officex_prompt, list_officex_roles
+from .prompt_runtime import compile_officex_prompt_bundle, list_officex_roles
 from .runtime_common import sanitize_runtime_identifier
 from .task_runtime import load_task_packet
 
@@ -103,7 +104,7 @@ def _resolve_provider_context(
 ) -> tuple[
     ProviderCatalogEntryManifest,
     ProviderModelCapabilityManifest,
-    str,
+    OfficeXCompiledPromptBundle,
     list[str],
 ]:
     if role not in list_officex_roles():
@@ -115,11 +116,14 @@ def _resolve_provider_context(
         model_id=model_id,
         catalog_path=catalog_path,
     )
-    prompt = compose_officex_prompt(role, include_cognition=include_cognition)
+    prompt_bundle = compile_officex_prompt_bundle(
+        role,
+        include_cognition=include_cognition,
+    )
     notes = list(entry.notes)
     if model.risk_notes:
         notes.extend(model.risk_notes)
-    return entry, model, prompt, notes
+    return entry, model, prompt_bundle, notes
 
 
 def build_provider_prompt_binding(
@@ -130,7 +134,7 @@ def build_provider_prompt_binding(
     include_cognition: bool = True,
     catalog_path: Path = DEFAULT_PROVIDER_CATALOG_MANIFEST,
 ) -> OfficeXProviderPromptBinding:
-    entry, model, prompt, notes = _resolve_provider_context(
+    entry, model, prompt_bundle, notes = _resolve_provider_context(
         provider_id,
         role=role,
         model_id=model_id,
@@ -154,7 +158,11 @@ def build_provider_prompt_binding(
         latency_class=model.latency_class,
         config_fields=entry.config_fields,
         notes=notes,
-        prompt=prompt,
+        prompt_manifest=prompt_bundle.prompt_manifest,
+        resolved_rule_refs=prompt_bundle.resolved_rule_refs,
+        compiled_prompt_debug=prompt_bundle.compiled_prompt_debug,
+        prompt_trace_record=prompt_bundle.prompt_trace_record,
+        prompt=prompt_bundle.compiled_prompt_debug,
     )
 
 
@@ -217,6 +225,10 @@ def build_provider_request_envelope(
         task_family=task_packet.task_family,
         approval_mode=task_packet.approval_mode,
         system_prompt=binding.prompt,
+        prompt_manifest=binding.prompt_manifest,
+        resolved_rule_refs=binding.resolved_rule_refs,
+        compiled_prompt_debug=binding.compiled_prompt_debug,
+        prompt_trace_record=binding.prompt_trace_record,
         input_artifacts=task_packet.input_artifacts,
         constraints=task_packet.constraints,
         acceptance_gates=task_packet.acceptance_gates,

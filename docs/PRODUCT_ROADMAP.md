@@ -3,6 +3,7 @@
 ## Active Product Lines
 
 - `OfficeX` docx-first deliverable runtime
+- `OfficeX` macOS app MVP with readiness-first product entry
 - document governance and orchestration
 - structured `docx` transformation and controlled patching
 - visual and structural audit
@@ -14,6 +15,8 @@
 - document generation pipeline with section-managed assembly
 - programmatic `docx` execution with Microsoft Word-compatible outputs
 - document revision sidecar with auditable patch execution
+- readiness and environment self-check workflow
+- Word-first renderer boundary benchmark
 - hybrid review canvas with Office mirror and platform truth
 - open-source editor embedding for the `docx` surface
 - visual audit lane for whitespace, pagination, and layout anomalies
@@ -31,12 +34,9 @@
 - service/API/MCP exposure
 - cross-renderer validation matrix
 
-## Archived Case Studies
+## Historical External References
 
-- `LoopMart archived case study`
-  - status: archived case study
-  - role: high-intensity validation history for revision, audit, and template alignment
-  - location: `/Users/nihao/Documents/Playground/archive/products/loopmart`
+- high-intensity historical validation material lives outside the active OfficeX repository
 
 ## Backlog Discipline
 

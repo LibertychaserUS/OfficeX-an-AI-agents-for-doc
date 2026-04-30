@@ -14,10 +14,29 @@ entities:
     entrypoints:
       - /Users/nihao/Documents/Playground/document-ops-system/README.md
       - /Users/nihao/Documents/Playground/document-ops-system/docs/ACTIVE_RULES_AND_PATHS.md
+      - /Users/nihao/Documents/Playground/document-ops-system/tools/report_scaffold_v3/product_entry.py
       - /Users/nihao/Documents/Playground/document-ops-system/tools/report_scaffold_v3/cli.py
     navigation_hints:
       - Start at README, then PROJECT.md, then ACTIVE_RULES_AND_PATHS.md, then CURRENT_STATE.md.
-      - Runtime CLI families are officex workspace, sandbox, task, provider, prompt, agent, and trace.
+      - Preferred local product entry is .venv/bin/officex after editable install.
+      - Runtime CLI families are officex doctor, render-boundary, runtime, workspace, sandbox, task, provider, prompt, agent, and trace.
+  - entity_id: officex_desktop_shell
+    kind: app_shell
+    path: /Users/nihao/Documents/Playground/document-ops-system/desktop
+    status: active_reference
+    purpose: Electron+Bun desktop shell for the first OfficeX macOS app MVP
+    source_of_truth:
+      - /Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/DESKTOP_RUNTIME_CONTRACT.md
+      - /Users/nihao/Documents/Playground/document-ops-system/desktop/README.md
+      - /Users/nihao/Documents/Playground/document-ops-system/tools/report_scaffold_v3/product_entry.py
+    entrypoints:
+      - /Users/nihao/Documents/Playground/document-ops-system/desktop/README.md
+      - /Users/nihao/Documents/Playground/document-ops-system/desktop/package.json
+      - /Users/nihao/Documents/Playground/document-ops-system/desktop/src/main/index.ts
+      - /Users/nihao/Documents/Playground/document-ops-system/desktop/src/renderer/src/App.tsx
+    navigation_hints:
+      - Use this shell for the readiness-first app home and first-launch actions.
+      - The embedded editor remains a later phase and is not part of the current app MVP.
   - entity_id: document_ops_trace
     kind: trace
     path: /Users/nihao/Documents/Playground/document-ops-system/trace
@@ -30,17 +49,15 @@ entities:
       - /Users/nihao/Documents/Playground/document-ops-system/trace/REPLAY.md
     navigation_hints:
       - Use the platform trace for active platform state only.
-  - entity_id: loopmart_legacy_monorepo_archive
-    kind: archived_product_workspace
-    path: /Users/nihao/Documents/Playground/archive/products/loopmart/LoopMart-GU2-rebuild
+  - entity_id: external_legacy_archive
+    kind: external_archive
+    path: /Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground
     status: read_only_reference
-    purpose: Preserved LoopMart product workspace retained for future review and audit
-    source_of_truth:
-      - /Users/nihao/Documents/Playground/archive/products/loopmart/ARCHIVE_NOTE.md
-    entrypoints:
-      - /Users/nihao/Documents/Playground/archive/products/loopmart/LoopMart-GU2-rebuild/trace/CURRENT_STATE.md
+    purpose: External historical archive retained outside the active OfficeX repository
+    source_of_truth: []
+    entrypoints: []
     navigation_hints:
-      - Treat this as an archived product codebase, not the active platform.
+      - Treat this as external historical material, not part of the active OfficeX repository.
   - entity_id: agent_cli_reference_corpus
     kind: reference_corpus
     path: /Users/nihao/Documents/Playground/document-ops-system/references/agent_cli
@@ -204,16 +221,5 @@ entities:
       - /Users/nihao/Documents/Playground/document-ops-system/prompts/history/INDEX.md
     navigation_hints:
       - Load the cognition layer first, then compose the needed role prompts.
-  - entity_id: archived_gu2_case_study
-    kind: archived_case_study
-    path: /Users/nihao/Documents/Playground/document-ops-system/docs/archive/case_studies/gu2
-    status: read_only_reference
-    purpose: Archived case-study lessons and report-specific issue records
-    source_of_truth:
-      - /Users/nihao/Documents/Playground/document-ops-system/docs/archive/case_studies/gu2/GU2_CASE_ISSUES_REGISTER.md
-    entrypoints:
-      - /Users/nihao/Documents/Playground/document-ops-system/docs/archive/case_studies/gu2/GU2_CASE_ISSUES_REGISTER.md
-    navigation_hints:
-      - Use only for historical analysis, not for default OfficeX recovery.
 notes:
   - Archived cases may be referenced without becoming the active platform root.

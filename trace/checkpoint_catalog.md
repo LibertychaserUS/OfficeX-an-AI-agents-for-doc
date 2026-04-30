@@ -1,8 +1,8 @@
 # Checkpoint Catalog
 
 - Trace dir: `/Users/nihao/Documents/Playground/document-ops-system/trace`
-- Checkpoint count: 20
-- Latest checkpoint: `CHECKPOINT_20`
+- Checkpoint count: 25
+- Latest checkpoint: `CHECKPOINT_25`
 - Missing numbers: none
 
 ## Entries
@@ -27,3 +27,8 @@
 - `CHECKPOINT_18` -> `/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_18.md` | CHECKPOINT_18 | 2026-04-13
 - `CHECKPOINT_19` -> `/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_19.md` | CHECKPOINT_19 | 2026-04-13
 - `CHECKPOINT_20` -> `/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_20.md` | CHECKPOINT_20 | 2026-04-13
+- `CHECKPOINT_21` -> `/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_21.md` | CHECKPOINT_21 | 2026-04-20
+- `CHECKPOINT_22` -> `/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_22.md` | CHECKPOINT_22 | 2026-04-21
+- `CHECKPOINT_23` -> `/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_23.md` | CHECKPOINT_23 | 2026-04-21
+- `CHECKPOINT_24` -> `/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_24.md` | CHECKPOINT_24 | 2026-04-21
+- `CHECKPOINT_25` -> `/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_25.md` | CHECKPOINT_25 | 2026-04-21

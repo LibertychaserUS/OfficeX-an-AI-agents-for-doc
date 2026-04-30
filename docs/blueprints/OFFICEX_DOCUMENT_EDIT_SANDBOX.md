@@ -49,8 +49,7 @@ Imported references remain immutable:
 
 Archived cases remain immutable:
 
-- `/Users/nihao/Documents/Playground/archive/products`
-- `/Users/nihao/Documents/Playground/document-ops-system/docs/archive`
+- `/Users/nihao/Documents/LegacyArchives/gu2-loopmart-outside-playground`
 
 The editor surface may open only sandbox copies for active editing.
 

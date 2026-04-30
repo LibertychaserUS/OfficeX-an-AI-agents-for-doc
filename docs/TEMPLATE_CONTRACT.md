@@ -12,10 +12,6 @@ Current baseline role:
 - neutral platform-owned formatting authority and reference sample for the
   `OfficeX` `docx` MVP
 
-Legacy case-specific template contracts were archived to:
-
-- [TEMPLATE_CONTRACT.gu2.md](/Users/nihao/Documents/Playground/document-ops-system/docs/archive/legacy_templates/TEMPLATE_CONTRACT.gu2.md)
-
 ## Page Geometry
 
 - Paper size: A4

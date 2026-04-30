@@ -1,7 +1,7 @@
 {
   "trace_dir": "/Users/nihao/Documents/Playground/document-ops-system/trace",
-  "checkpoint_count": 20,
-  "latest_checkpoint_id": "CHECKPOINT_20",
+  "checkpoint_count": 25,
+  "latest_checkpoint_id": "CHECKPOINT_25",
   "missing_numbers": [],
   "entries": [
     {
@@ -162,6 +162,46 @@
       "path": "/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_20.md",
       "title": "CHECKPOINT_20",
       "date": "2026-04-13",
+      "backfilled": false
+    },
+    {
+      "checkpoint_number": 21,
+      "checkpoint_id": "CHECKPOINT_21",
+      "path": "/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_21.md",
+      "title": "CHECKPOINT_21",
+      "date": "2026-04-20",
+      "backfilled": false
+    },
+    {
+      "checkpoint_number": 22,
+      "checkpoint_id": "CHECKPOINT_22",
+      "path": "/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_22.md",
+      "title": "CHECKPOINT_22",
+      "date": "2026-04-21",
+      "backfilled": false
+    },
+    {
+      "checkpoint_number": 23,
+      "checkpoint_id": "CHECKPOINT_23",
+      "path": "/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_23.md",
+      "title": "CHECKPOINT_23",
+      "date": "2026-04-21",
+      "backfilled": false
+    },
+    {
+      "checkpoint_number": 24,
+      "checkpoint_id": "CHECKPOINT_24",
+      "path": "/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_24.md",
+      "title": "CHECKPOINT_24",
+      "date": "2026-04-21",
+      "backfilled": false
+    },
+    {
+      "checkpoint_number": 25,
+      "checkpoint_id": "CHECKPOINT_25",
+      "path": "/Users/nihao/Documents/Playground/document-ops-system/trace/CHECKPOINT_25.md",
+      "title": "CHECKPOINT_25",
+      "date": "2026-04-21",
       "backfilled": false
     }
   ]
