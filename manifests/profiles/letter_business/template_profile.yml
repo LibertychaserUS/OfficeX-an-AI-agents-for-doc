@@ -1,0 +1,81 @@
+schema_version: 1
+template_id: "officex-letter-business"
+source_template_docx: null
+page_setup:
+  page_width_pt: 612.0
+  page_height_pt: 792.0
+  top_margin_pt: 72.0
+  bottom_margin_pt: 72.0
+  left_margin_pt: 72.0
+  right_margin_pt: 72.0
+  header_distance_pt: 36.0
+  footer_distance_pt: 36.0
+  usable_body_width_pt: 468.0
+  usable_body_height_pt: 648.0
+document_defaults:
+  ascii_font: "Arial"
+  hansi_font: "Arial"
+  east_asia_font: "Arial"
+  explicit_default_size_pt: 11.0
+  notes:
+    - "US Letter business profile with Arial font family."
+    - "Suitable for proposals, memos, and business documents."
+style_contract:
+  Normal:
+    based_on: null
+    effective_font:
+      ascii: "Arial"
+      east_asia: "Arial"
+    effective_size_pt: 11.0
+    bold: false
+    alignment: "justify"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.08
+    space_before_pt: 0
+    space_after_pt: 6.0
+  Heading 1:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Arial"
+      east_asia: "Arial"
+    effective_size_pt: 16.0
+    bold: true
+    alignment: "left"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.08
+    space_before_pt: 12.0
+    space_after_pt: 6.0
+  Heading 2:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Arial"
+      east_asia: "Arial"
+    effective_size_pt: 14.0
+    bold: true
+    alignment: "left"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.08
+    space_before_pt: 10.0
+    space_after_pt: 4.0
+  Heading 3:
+    based_on: "Normal"
+    effective_font:
+      ascii: "Arial"
+      east_asia: "Arial"
+    effective_size_pt: 12.0
+    bold: true
+    alignment: "left"
+    first_line_indent_pt: 0
+    left_indent_pt: 0
+    right_indent_pt: 0
+    line_spacing_multiple: 1.08
+    space_before_pt: 8.0
+    space_after_pt: 3.0
+resolution_rules:
+  - "US Letter business defaults for professional documents."

@@ -1,0 +1,7 @@
+schema_version: 1
+template_id: "officex-letter-business"
+image_layout_rules:
+  usable_body_width_pt: 468.0
+  usable_body_height_pt: 648.0
+  reserve_caption_space_pt: 48.0
+  reserve_bottom_buffer_pt: 24.0

@@ -71,6 +71,7 @@ officex_provider_app = typer.Typer(no_args_is_help=True, help="OfficeX provider 
 officex_agent_app = typer.Typer(no_args_is_help=True, help="OfficeX agent commands.")
 officex_trace_app = typer.Typer(no_args_is_help=True, help="OfficeX trace commands.")
 officex_audit_app = typer.Typer(no_args_is_help=True, help="OfficeX audit commands.")
+officex_profile_app = typer.Typer(no_args_is_help=True, help="OfficeX profile commands.")
 officex_app.add_typer(officex_workspace_app, name="workspace")
 officex_app.add_typer(officex_sandbox_app, name="sandbox")
 officex_app.add_typer(officex_task_app, name="task")
@@ -79,6 +80,7 @@ officex_app.add_typer(officex_provider_app, name="provider")
 officex_app.add_typer(officex_agent_app, name="agent")
 officex_app.add_typer(officex_trace_app, name="trace")
 officex_app.add_typer(officex_audit_app, name="audit")
+officex_app.add_typer(officex_profile_app, name="profile")
 app.add_typer(officex_app, name="officex")
 
 
@@ -1100,6 +1102,124 @@ def officex_trace_checkpoint(
         console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
         return
     console.print(render_officex_trace_checkpoint(payload))
+
+
+@officex_profile_app.command("list")
+def officex_profile_list(
+    as_json: bool = typer.Option(
+        False, "--as-json", help="Emit machine-readable JSON.",
+    ),
+) -> None:
+    from .profile_runtime import list_profiles, get_active_profile_id
+
+    profiles = list_profiles()
+    active_id = get_active_profile_id()
+
+    if as_json:
+        console.print_json(json.dumps(
+            {"active": active_id, "profiles": profiles},
+            ensure_ascii=False, indent=2,
+        ))
+        return
+
+    if not profiles:
+        console.print("No profiles found.")
+        return
+
+    for p in profiles:
+        marker = "[green]*[/green]" if p["profile_id"] == active_id else " "
+        font = p.get("default_font", "?")
+        w = p.get("page_width_pt", "?")
+        h = p.get("page_height_pt", "?")
+        console.print(f"  {marker} [cyan]{p['profile_id']}[/cyan]  {w}x{h}pt  {font}")
+
+
+@officex_profile_app.command("use")
+def officex_profile_use(
+    profile_id: str = typer.Argument(..., help="Profile to activate."),
+    as_json: bool = typer.Option(
+        False, "--as-json", help="Emit machine-readable JSON.",
+    ),
+) -> None:
+    from .profile_runtime import activate_profile
+
+    try:
+        result = activate_profile(profile_id)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    if as_json:
+        console.print_json(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    console.print(f"[green]Activated profile:[/green] {result['profile_id']}")
+    console.print(f"Updated: {', '.join(result['updated_files'])}")
+
+
+@officex_profile_app.command("create")
+def officex_profile_create(
+    profile_id: str = typer.Argument(..., help="Name for the new profile."),
+    page_width: float = typer.Option(612.0, "--page-width", help="Page width in points."),
+    page_height: float = typer.Option(792.0, "--page-height", help="Page height in points."),
+    margin: float = typer.Option(72.0, "--margin", help="Uniform margin in points."),
+    font: str = typer.Option("Arial", "--font", help="Default font family."),
+    font_size: float = typer.Option(11.0, "--font-size", help="Default font size in points."),
+    line_spacing: float = typer.Option(1.08, "--line-spacing", help="Default line spacing multiple."),
+    as_json: bool = typer.Option(
+        False, "--as-json", help="Emit machine-readable JSON.",
+    ),
+) -> None:
+    from .profile_runtime import create_profile
+
+    try:
+        result = create_profile(
+            profile_id,
+            page_width_pt=page_width,
+            page_height_pt=page_height,
+            margin_pt=margin,
+            font=font,
+            font_size_pt=font_size,
+            line_spacing=line_spacing,
+        )
+    except FileExistsError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    if as_json:
+        console.print_json(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+
+    console.print(f"[green]Created profile:[/green] {result['profile_id']}")
+    console.print(f"Page: {result['page_size']} | Font: {result['font']} {result['font_size_pt']}pt")
+    if result.get("validation_issues"):
+        for issue in result["validation_issues"]:
+            console.print(f"  [yellow]Warning:[/yellow] {issue}")
+    else:
+        console.print("  Validation: [green]clean[/green]")
+
+
+@officex_profile_app.command("validate")
+def officex_profile_validate(
+    profile_id: str = typer.Argument(..., help="Profile to validate."),
+    as_json: bool = typer.Option(
+        False, "--as-json", help="Emit machine-readable JSON.",
+    ),
+) -> None:
+    from .profile_runtime import validate_profile
+
+    issues = validate_profile(profile_id)
+    if as_json:
+        console.print_json(json.dumps(
+            {"profile_id": profile_id, "valid": len(issues) == 0, "issues": issues},
+            ensure_ascii=False, indent=2,
+        ))
+        return
+    if issues:
+        console.print(f"[yellow]Profile `{profile_id}` has {len(issues)} issue(s):[/yellow]")
+        for issue in issues:
+            console.print(f"  - {issue}")
+        raise typer.Exit(code=1)
+    console.print(f"[green]Profile `{profile_id}` is valid.[/green]")
 
 
 @officex_app.command("generate")

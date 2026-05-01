@@ -1,0 +1,47 @@
+schema_version: 1
+template_id: "officex-letter-business"
+default_output_strategy:
+  base_document: "format_authority_docx"
+  preserve_template_sections: true
+  clear_existing_body_content: true
+paragraph_roles:
+  heading_1:
+    style: "Heading 1"
+    paragraph_format:
+      alignment: "left"
+    run_format: {}
+    allow_mixed_runs: false
+  heading_2:
+    style: "Heading 2"
+    paragraph_format:
+      alignment: "left"
+    run_format: {}
+    allow_mixed_runs: false
+  heading_3:
+    style: "Heading 3"
+    paragraph_format:
+      alignment: "left"
+    run_format: {}
+    allow_mixed_runs: false
+  body:
+    style: "Normal"
+    paragraph_format:
+      alignment: "justify"
+    run_format: {}
+  figure_caption:
+    style: "Normal"
+    paragraph_format:
+      alignment: "center"
+    run_format:
+      size_pt: 10.0
+    allow_mixed_runs: false
+image_roles:
+  figure:
+    caption_role: "figure_caption"
+    width_mode: "fit_usable_body_width"
+    max_width_pt: 468.0
+    center_paragraph: true
+guardrails:
+  reject_unknown_roles: true
+  strip_template_body_content_before_write: true
+  write_from_rules_not_from_sample_fit: true
