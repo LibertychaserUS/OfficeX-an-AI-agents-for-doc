@@ -1,6 +1,6 @@
 schema_version: 1
 template_id: "officex-docx-mvp-template"
-source_template_docx: "/Users/nihao/Documents/Playground/document-ops-system/imports/samples/officex_docx_mvp_template.docx"
+source_template_docx: "imports/samples/officex_docx_mvp_template.docx"
 page_setup:
   page_width_pt: 595.3
   page_height_pt: 841.9

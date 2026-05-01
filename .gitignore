@@ -27,8 +27,6 @@ references/
 corpora/
 docs/
 harnesses/
-prompts/
-imports/
 sandboxes/
 AGENTS.md
 BOUNDARY.md

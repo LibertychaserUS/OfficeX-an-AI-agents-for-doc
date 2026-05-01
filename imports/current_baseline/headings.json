@@ -1,0 +1,18 @@
+[
+  {
+    "index": 0,
+    "level": 1,
+    "text": "OfficeX",
+    "style_name": "Heading 1",
+    "section_id": "officex",
+    "fingerprint": "f9853d91067bd669fcfd81604fe9980e8a62699f"
+  },
+  {
+    "index": 1,
+    "level": 2,
+    "text": "Docx MVP Template",
+    "style_name": "Heading 2",
+    "section_id": "docx-mvp-template",
+    "fingerprint": "d7757234950baa1d43a817c6fc437e6b07db9d37"
+  }
+]

@@ -34,6 +34,7 @@ from .paths import (
     DEFAULT_SNIPPETS_MANIFEST,
     DEFAULT_TEMPLATE_PROFILE_MANIFEST,
     DEFAULT_WRITE_CONTRACT_MANIFEST,
+    SCAFFOLD_ROOT,
 )
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
@@ -45,7 +46,18 @@ def _load_yaml_model(path: Path, model_type: type[ModelType]) -> ModelType:
 
 
 def load_baseline_manifest(path: Path = DEFAULT_BASELINE_MANIFEST) -> BaselineManifest:
-    return _load_yaml_model(path, BaselineManifest)
+    manifest = _load_yaml_model(path, BaselineManifest)
+    # Resolve relative paths against SCAFFOLD_ROOT
+    root = SCAFFOLD_ROOT
+    for field_name in ("workspace_root", "scaffold_root", "target_docx", "format_authority_docx"):
+        value = getattr(manifest, field_name, None)
+        if value is not None and not value.is_absolute():
+            object.__setattr__(manifest, field_name, root / value)
+    resolved_roots = []
+    for p in manifest.read_only_reference_roots:
+        resolved_roots.append(root / p if not p.is_absolute() else p)
+    object.__setattr__(manifest, "read_only_reference_roots", resolved_roots)
+    return manifest
 
 
 def load_sections_manifest() -> SectionsManifest:
