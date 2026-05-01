@@ -6,6 +6,13 @@
 
 ---
 
+## System Requirements
+
+- **OS**: macOS, Linux (Windows not supported)
+- **Python**: 3.11+
+- **LibreOffice** (optional): For visual audit PNG rendering
+- Any OpenAI-compatible API endpoint for AI features
+
 ## What is OfficeX?
 
 OfficeX is an **AI agent platform** whose first vertical is document operations. It solves a fundamental problem: when AI generates large documents directly through Python, the results suffer from layout issues, style drift, broken pagination, and table overflow — problems invisible to text/XML inspection.
