@@ -1,5 +1,9 @@
 # OfficeX
 
+[![CI](https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc/actions/workflows/ci.yml/badge.svg)](https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **AI-powered document operations platform.** Generate, validate, and audit Word documents through a CLI that works standalone or as a skill for AI agents.
 
 [中文文档 / Chinese Documentation](README_CN.md)
