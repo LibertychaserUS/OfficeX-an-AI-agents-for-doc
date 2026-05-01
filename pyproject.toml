@@ -3,27 +3,44 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "document-operations-system"
+name = "officex"
 version = "0.1.0"
-description = "Multi-agent document engineering platform with compatible report_scaffold_v3 internals."
+description = "AI-powered document operations platform. Generate, validate, and audit Word documents."
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "OfficeX Contributors"}]
+keywords = ["document", "docx", "word", "ai", "agent", "mcp", "validation", "audit"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Office Suites",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
-  "deepdiff==8.6.2",
-  "lxml==6.0.2",
+  "deepdiff>=8.0",
+  "lxml>=6.0",
   "mcp>=1.0",
   "numpy>=1.24",
   "openai>=1.0",
-  "packaging==26.0",
-  "Pillow==11.3.0",
-  "pydantic==2.12.5",
+  "packaging>=24.0",
+  "Pillow>=11.0",
+  "pydantic>=2.10",
   "pymupdf>=1.24",
-  "python-docx==1.2.0",
-  "python-pptx==1.0.2",
-  "PyYAML==6.0.3",
-  "rich==14.3.3",
-  "typer==0.23.2",
+  "python-docx>=1.2",
+  "python-pptx>=1.0",
+  "PyYAML>=6.0",
+  "rich>=14.0",
+  "typer>=0.23",
 ]
+
+[project.urls]
+Homepage = "https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc"
+Repository = "https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc"
+Issues = "https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc/issues"
 
 [project.scripts]
 officex = "tools.report_scaffold_v3.product_entry:entrypoint"
