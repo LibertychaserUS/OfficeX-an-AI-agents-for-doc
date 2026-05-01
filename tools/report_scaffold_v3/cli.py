@@ -70,6 +70,7 @@ officex_prompt_app = typer.Typer(no_args_is_help=True, help="OfficeX prompt comm
 officex_provider_app = typer.Typer(no_args_is_help=True, help="OfficeX provider commands.")
 officex_agent_app = typer.Typer(no_args_is_help=True, help="OfficeX agent commands.")
 officex_trace_app = typer.Typer(no_args_is_help=True, help="OfficeX trace commands.")
+officex_audit_app = typer.Typer(no_args_is_help=True, help="OfficeX audit commands.")
 officex_app.add_typer(officex_workspace_app, name="workspace")
 officex_app.add_typer(officex_sandbox_app, name="sandbox")
 officex_app.add_typer(officex_task_app, name="task")
@@ -77,6 +78,7 @@ officex_app.add_typer(officex_prompt_app, name="prompt")
 officex_app.add_typer(officex_provider_app, name="provider")
 officex_app.add_typer(officex_agent_app, name="agent")
 officex_app.add_typer(officex_trace_app, name="trace")
+officex_app.add_typer(officex_audit_app, name="audit")
 app.add_typer(officex_app, name="officex")
 
 
@@ -1098,6 +1100,71 @@ def officex_trace_checkpoint(
         console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
         return
     console.print(render_officex_trace_checkpoint(payload))
+
+
+@officex_audit_app.command("visual")
+def officex_audit_visual(
+    candidate_docx: Path = typer.Option(
+        ...,
+        "--candidate-docx",
+        help="Candidate docx to render and visually audit.",
+    ),
+    output_dir: Path = typer.Option(
+        ...,
+        "--output-dir",
+        help="Directory for rendered PNG pages and audit report.",
+    ),
+    dpi: int = typer.Option(
+        150,
+        "--dpi",
+        help="Rendering resolution in DPI.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON instead of a formatted summary.",
+    ),
+) -> None:
+    from .visual_audit import render_docx_to_png
+    from .visual_audit_checks import run_visual_checks
+
+    render_report = render_docx_to_png(
+        candidate_docx.expanduser().resolve(),
+        output_dir.expanduser().resolve(),
+        dpi=dpi,
+    )
+
+    if render_report.status == "renderer_unavailable":
+        console.print("LibreOffice (soffice) not found. Visual audit requires a renderer.")
+        raise typer.Exit(code=2)
+
+    if render_report.status == "render_failed":
+        console.print("Rendering failed. Check logs for details.")
+        raise typer.Exit(code=1)
+
+    visual_findings = run_visual_checks(render_report.png_paths)
+    render_report.findings = visual_findings
+
+    payload = render_report.model_dump(mode="json")
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+
+    lines = [
+        f"Rendered {render_report.page_count} page(s) from {candidate_docx}",
+        f"Renderer: {render_report.renderer_name} {render_report.renderer_version}",
+        f"Output: {render_report.output_dir}",
+    ]
+    if visual_findings:
+        lines.append(f"Visual findings: {len(visual_findings)}")
+        for finding in visual_findings:
+            lines.append(f"  [{finding.severity.upper()}] page {finding.page}: {finding.message}")
+    else:
+        lines.append("Visual audit: clean")
+    console.print("\n".join(lines))
+
+    if any(f.severity == "error" for f in visual_findings):
+        raise typer.Exit(code=1)
 
 
 @app.command("check-fonts")
