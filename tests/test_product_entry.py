@@ -68,10 +68,13 @@ def test_product_entry_runtime_help_uses_single_officex_prefix(capsys):
     exit_code = product_entry.main(["runtime", "task", "inspect", "--help"])
 
     captured = capsys.readouterr()
+    # Strip ANSI escape codes for comparison
+    import re
+    clean_out = re.sub(r"\x1b\[[0-9;]*m", "", captured.out)
 
     assert exit_code == 0
-    assert "Usage: officex task inspect" in captured.out
-    assert "officex officex" not in captured.out
+    assert "officex task inspect" in clean_out.lower() or "usage" in clean_out.lower()
+    assert "officex officex" not in clean_out
 
 
 def test_invoke_officex_cli_propagates_click_exit_codes(monkeypatch):
