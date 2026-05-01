@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from docx import Document
@@ -17,6 +18,8 @@ from .models import (
     WriteRoleManifest,
 )
 
+logger = logging.getLogger(__name__)
+
 
 ALIGNMENTS = {
     "left": WD_ALIGN_PARAGRAPH.LEFT,
@@ -30,6 +33,24 @@ class WriteContractError(ValueError):
     pass
 
 
+KNOWN_PARAGRAPH_FORMAT_FIELDS = frozenset({
+    "alignment",
+    "first_line_indent_pt",
+    "left_indent_pt",
+    "right_indent_pt",
+    "line_spacing_multiple",
+    "space_before_pt",
+    "space_after_pt",
+})
+
+KNOWN_RUN_FORMAT_FIELDS = frozenset({
+    "font_name",
+    "size_pt",
+    "bold",
+    "italic",
+})
+
+
 def _clear_document_body(document: Document) -> None:
     body = document._body._element
     for child in list(body):
@@ -39,6 +60,13 @@ def _clear_document_body(document: Document) -> None:
 
 
 def _apply_paragraph_format(paragraph, role: WriteRoleManifest) -> None:
+    unknown_fields = set(role.paragraph_format) - KNOWN_PARAGRAPH_FORMAT_FIELDS
+    if unknown_fields:
+        logger.warning(
+            "Write contract role `%s` has unknown paragraph_format fields: %s",
+            role.style,
+            ", ".join(sorted(unknown_fields)),
+        )
     paragraph.style = role.style
     paragraph_format = paragraph.paragraph_format
     alignment = role.paragraph_format.get("alignment")
@@ -72,6 +100,13 @@ def _apply_paragraph_format(paragraph, role: WriteRoleManifest) -> None:
 
 def _apply_run_format(run, role: WriteRoleManifest) -> None:
     run_format = role.run_format
+    unknown_fields = set(run_format) - KNOWN_RUN_FORMAT_FIELDS
+    if unknown_fields:
+        logger.warning(
+            "Write contract role `%s` has unknown run_format fields: %s",
+            role.style,
+            ", ".join(sorted(unknown_fields)),
+        )
     font_name = run_format.get("font_name")
     if font_name:
         run.font.name = font_name

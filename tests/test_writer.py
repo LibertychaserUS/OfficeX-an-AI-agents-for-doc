@@ -115,3 +115,45 @@ def test_built_candidate_validates_without_errors_or_warnings(tmp_path):
 
     assert not errors
     assert not warnings
+
+
+def test_writer_warns_on_unknown_contract_fields(tmp_path, caplog):
+    import logging
+    from tools.report_scaffold_v3.writer import WriteContractError
+    from tools.report_scaffold_v3.models import (
+        BuildSourceManifest,
+        WriteContractManifest,
+        WriteRoleManifest,
+    )
+    from docx import Document as DocxDocument
+
+    template_path = tmp_path / "template.docx"
+    DocxDocument().save(str(template_path))
+
+    source = BuildSourceManifest(
+        document_id="test",
+        output_name="test.docx",
+        blocks=[{"kind": "paragraph", "role": "body", "text": "Hello"}],
+    )
+    contract = WriteContractManifest(
+        template_id="test",
+        paragraph_roles={
+            "body": WriteRoleManifest(
+                style="Normal",
+                paragraph_format={"alignment": "left", "typo_field": 10},
+                run_format={"font_name": "Arial", "unknwon_bold": True},
+            )
+        },
+    )
+
+    with caplog.at_level(logging.WARNING, logger="tools.report_scaffold_v3.writer"):
+        build_word_candidate(
+            template_docx=template_path,
+            source=source,
+            contract=contract,
+            output_docx=tmp_path / "output.docx",
+        )
+
+    warning_messages = [record.message for record in caplog.records]
+    assert any("typo_field" in msg for msg in warning_messages)
+    assert any("unknwon_bold" in msg for msg in warning_messages)

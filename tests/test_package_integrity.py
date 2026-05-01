@@ -26,7 +26,7 @@ def test_core_module_contract_covers_validation_engine():
     assert specs["snippet_audit.py"] == "tools.report_scaffold_v3.snippet_audit"
     assert specs["snippet_compiler.py"] == "tools.report_scaffold_v3.snippet_compiler"
     assert specs["trace_indexer.py"] == "tools.report_scaffold_v3.trace_indexer"
-    assert specs["validation.py"] == "tools.report_scaffold_v3.validation"
+    assert specs["validation/__init__.py"] == "tools.report_scaffold_v3.validation"
     assert specs["writer.py"] == "tools.report_scaffold_v3.writer"
 
 
@@ -44,7 +44,7 @@ def test_package_contract_detects_missing_core_module_files(tmp_path: Path):
 
     missing_messages = [issue.message for issue in issues if issue.code == "missing-core-module-file"]
     assert missing_messages
-    assert any("validation.py" in message for message in missing_messages)
+    assert any("validation/__init__.py" in message for message in missing_messages)
 
 
 def test_python_runtime_floor_is_python_311():
