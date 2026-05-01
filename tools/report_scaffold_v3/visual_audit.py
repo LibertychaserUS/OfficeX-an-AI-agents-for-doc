@@ -71,7 +71,7 @@ def _convert_docx_to_pdf(
         str(docx_path),
     ]
 
-    logger.info("Running: %s", " ".join(cmd))
+    logger.debug("Running: %s", " ".join(cmd))
     try:
         result = subprocess.run(
             cmd, capture_output=True, text=True, timeout=120,
@@ -115,7 +115,7 @@ def _pdf_to_pngs(
         png_path = output_dir / f"page-{page_num + 1}.png"
         pix.save(str(png_path))
         png_paths.append(png_path)
-        logger.info("Rendered page %d -> %s (%dx%d)", page_num + 1, png_path, pix.width, pix.height)
+        logger.debug("Rendered page %d -> %s (%dx%d)", page_num + 1, png_path, pix.width, pix.height)
 
     doc.close()
     return png_paths
@@ -140,7 +140,7 @@ def render_docx_to_png(
 
     soffice = _find_soffice()
     if soffice is None:
-        logger.warning("LibreOffice (soffice) not found; visual audit unavailable")
+        logger.debug("LibreOffice (soffice) not found; visual audit unavailable")
         return VisualRenderReport(
             docx_path=docx_path,
             output_dir=output_dir,

@@ -151,7 +151,7 @@ def run_generate(
     output_docx = output_dir / output_name
 
     # ---- Step 1: Call AI provider ----
-    logger.info("Step 1: Calling AI provider for content generation")
+    logger.debug("Step 1: Calling AI provider for content generation")
 
     # Build a minimal task packet for the envelope
     from .officex_runtime import run_docx_mvp
@@ -197,7 +197,7 @@ def run_generate(
         client = OpenAI(**client_kwargs)
         resolved_model = model_id or "qwen-plus"
 
-        logger.info("Dispatching to %s model=%s", provider_id, resolved_model)
+        logger.debug("Dispatching to %s model=%s", provider_id, resolved_model)
         response = client.chat.completions.create(
             model=resolved_model,
             messages=[
@@ -214,7 +214,7 @@ def run_generate(
                 "completion_tokens": response.usage.completion_tokens,
                 "total_tokens": response.usage.total_tokens,
             }
-        logger.info("AI responded: %d chars, tokens=%s", len(ai_text), ai_tokens)
+        logger.debug("AI responded: %d chars, tokens=%s", len(ai_text), ai_tokens)
 
     except Exception as exc:
         logger.error("AI dispatch failed: %s", exc)
@@ -228,7 +228,7 @@ def run_generate(
     (output_dir / "ai_response.txt").write_text(ai_text, encoding="utf-8")
 
     # ---- Step 2: Parse AI response into BuildSourceManifest ----
-    logger.info("Step 2: Parsing AI response into build source")
+    logger.debug("Step 2: Parsing AI response into build source")
     try:
         build_source = _parse_ai_response_to_build_source(
             ai_text,
@@ -252,7 +252,7 @@ def run_generate(
     )
 
     # ---- Step 3: Generate docx ----
-    logger.info("Step 3: Building docx from parsed content")
+    logger.debug("Step 3: Building docx from parsed content")
     try:
         template_docx = (
             baseline.format_authority_docx.expanduser().resolve()
@@ -265,7 +265,7 @@ def run_generate(
             contract=write_contract,
             output_docx=output_docx,
         )
-        logger.info("Built %s: %d paragraphs", output_docx.name, build_result.paragraph_count)
+        logger.debug("Built %s: %d paragraphs", output_docx.name, build_result.paragraph_count)
     except Exception as exc:
         logger.error("docx build failed: %s", exc)
         return GenerateReport(
@@ -277,7 +277,7 @@ def run_generate(
         )
 
     # ---- Step 4: Structural validation ----
-    logger.info("Step 4: Structural validation")
+    logger.debug("Step 4: Structural validation")
     from .docx_inspector import inspect_docx, inspect_docx_overrides
     from .ooxml_inspector import extract_effective_style_inventory
     from .validation import build_validation_report
@@ -310,7 +310,7 @@ def run_generate(
     visual_finding_count = 0
 
     if include_visual_audit:
-        logger.info("Step 5: Visual audit (render + check)")
+        logger.debug("Step 5: Visual audit (render + check)")
         from .visual_audit import render_docx_to_png
         from .visual_audit_checks import run_visual_checks
 

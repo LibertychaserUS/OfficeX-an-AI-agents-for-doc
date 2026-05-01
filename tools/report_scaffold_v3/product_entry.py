@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import shutil
 import sys
 from typing import Sequence
 
@@ -24,14 +23,7 @@ def _invoke_officex_cli(argv: list[str]) -> int:
 
 def _show_banner() -> None:
     from .cli_banner import render_startup_banner
-
-    import platform
-    renderer_available = shutil.which("soffice") is not None
-    render_startup_banner(
-        python_version=platform.python_version(),
-        renderer_available=renderer_available,
-        renderer_name="LibreOffice" if renderer_available else "",
-    )
+    render_startup_banner()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

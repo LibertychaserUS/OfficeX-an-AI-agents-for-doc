@@ -1,113 +1,179 @@
-# Document Operations System
+# OfficeX
 
-This repository contains a multi-agent document engineering platform for
-ingestion, generation, revision, audit, release, and replayable trace.
+**AI-powered document operations platform.** Generate, validate, and audit Word documents through a CLI that works standalone or as a skill for AI agents.
 
-It was incubated from a report-oriented scaffold, but it is now positioned as a
-broader deliverable runtime.
+[中文文档 / Chinese Documentation](README_CN.md)
 
-The current internal codename for the app surface is:
+## What It Does
 
-- `OfficeX`
+```
+Your prompt  -->  AI generates content  -->  OfficeX builds .docx  -->  Structural + Visual QA  -->  Verified document
+```
 
-The current MVP focus is:
+OfficeX turns document creation into an engineered pipeline:
 
-- `docx` only
-- Microsoft Word-compatible output
-- desktop-first human-in-the-loop workflow
-- first app MVP path: `officex` product entry plus Electron desktop shell
-
-## Compatibility Note
-
-The product name is `Document Operations System`.
-
-During this transition period, the internal Python package and CLI module path
-remain:
-
-- `tools.report_scaffold_v3`
-
-That is a technical compatibility detail, not the product identity.
-
-## Layout
-
-- `docs/`: product governance, architecture, workflow, and roadmap
-- `harnesses/`: reusable execution playbooks for recurring task families
-- `manifests/`: contracts, catalogs, and managed configuration
-- `prompts/`: local multi-agent prompt pack
-- `sources/`: starter managed inputs and demo sources
-- `tools/`: platform implementation
-- `tests/`: automated verification
-- `trace/`: local replay and status records for the platform itself
-- `imports/`, `locks/`, `logs/`, `outputs/`: run-time platform workspaces
+- **Generate**: Give it a prompt, get a properly formatted Word document
+- **Validate**: Structural checks (styles, fonts, page geometry, image fit)
+- **Visual Audit**: Renders to PNG via LibreOffice, checks for blank pages, layout gaps, aspect ratio issues
+- **Deterministic**: Same input always produces same output. AI generates content, but program code owns document structure
 
 ## Quick Start
 
-Create a local environment if needed. The active OfficeX runtime baseline is
-Python 3.11:
+### 1. Install
 
 ```bash
-/opt/homebrew/bin/python3.11 -m venv .venv
-.venv/bin/python --version
-.venv/bin/pip install -r requirements.lock.txt
-.venv/bin/pip install -e .
+git clone https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc.git
+cd OfficeX-an-AI-agents-for-doc
+
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.lock.txt
+pip install -e .
 ```
 
-Primary smoke commands:
+### 2. Check environment
 
 ```bash
-.venv/bin/python -m tools.report_scaffold_v3.cli check-package
+officex
+```
+
+This shows the brand banner with auto-detected environment status:
+
+```
+╭──────────────────────────────────────────────────────────╮
+│  OfficeX  Document Operations System                      │
+│  v0.1.0  |  Python 3.11.15                                │
+╰──────────────────────────────────────────────────────────╯
+                       Environment
+┌────────────────┬────────┬────────────────────────────────┐
+│ Python         │   OK   │ 3.11.15                        │
+│ LibreOffice    │   OK   │ visual audit available         │
+│ Core deps      │   OK   │ all present                    │
+│ API key        │   --   │ set OFFICEX_PROVIDER_API_KEY   │
+└────────────────┴────────┴────────────────────────────────┘
+```
+
+### 3. Optional: Install LibreOffice (for visual audit)
+
+```bash
+# macOS
+brew install --cask libreoffice
+
+# Ubuntu/Debian
+sudo apt install libreoffice
+```
+
+### 4. Generate a document
+
+```bash
+export OFFICEX_PROVIDER_API_KEY="your-api-key"
+export OFFICEX_PROVIDER_BASE_URL="https://your-provider/v1"  # OpenAI-compatible endpoint
+
+officex generate \
+  --prompt "Write a project proposal for a mobile study scheduler app" \
+  --model qwen-plus \
+  --output-dir ./my-proposal
+```
+
+Output:
+
+```
+Generated: ./my-proposal/gen-20260501-221650.docx
+Model: qwen-plus | Tokens: {'prompt_tokens': 1019, 'completion_tokens': 658, 'total_tokens': 1677}
+Validation: 0 error(s), 0 warning(s)
+Visual: 1 page(s), 0 finding(s)
+```
+
+The output directory contains:
+- `*.docx` — Final Word document
+- `ai_response.txt` — Raw AI output
+- `build_source.json` — Parsed document structure
+- `validation.json` — Structural validation report
+- `visual/page-*.png` — Rendered page images
+
+## Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `officex` | Show banner + environment scan |
+| `officex generate --prompt "..."` | End-to-end: prompt to verified docx |
+| `officex doctor` | Full environment readiness check |
+| `officex audit visual --candidate-docx file.docx` | Render to PNG + visual QA |
+| `officex task run-docx-mvp` | Deterministic docx from manifests |
+| `officex task apply-patch-bundle` | Apply deterministic patches |
+| `officex provider list` | List configured AI providers |
+| `officex provider build-request` | Build provider request envelope |
+| `officex prompt show --role orchestrator` | Show composed role prompt |
+| `officex agent list` | List registered agent roles |
+| `officex trace checkpoint` | Create a trace checkpoint |
+
+All commands support `--as-json` for machine-readable output.
+
+## Use as an AI Agent Skill
+
+OfficeX is designed to be called by other AI agents (Codex, Claude Code, Hermes, etc.) as a document operations tool:
+
+```bash
+# Agent calls OfficeX to generate a document
+officex generate --prompt "..." --model qwen-plus --output-dir /tmp/task-123 --as-json
+
+# Agent calls OfficeX to validate an existing document
+officex audit visual --candidate-docx report.docx --output-dir /tmp/audit-123 --as-json
+
+# Agent reads JSON output to decide next steps
+```
+
+The `--as-json` flag ensures all output is machine-parseable. Agents can:
+1. Call `officex generate` to create documents from natural language
+2. Call `officex audit visual` to verify document quality
+3. Parse JSON results to determine success/failure
+4. Iterate: fix issues and regenerate
+
+## Supported Providers
+
+OfficeX uses the OpenAI-compatible chat API. Any provider with a compatible endpoint works:
+
+| Provider | Configuration |
+|----------|--------------|
+| OpenAI | `OFFICEX_PROVIDER_API_KEY=sk-...` |
+| Anthropic (via proxy) | `OFFICEX_PROVIDER_API_KEY=... OFFICEX_PROVIDER_BASE_URL=...` |
+| Alibaba DashScope | `OFFICEX_PROVIDER_API_KEY=sk-... OFFICEX_PROVIDER_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| Local/self-hosted | `OFFICEX_PROVIDER_API_KEY=... OFFICEX_PROVIDER_BASE_URL=http://localhost:8080/v1` |
+
+## Architecture
+
+```
+Contract Layer    manifests/ (baseline, write_contract, template_profile, layout_contract)
+                  All behavior driven by declarative manifests, nothing hardcoded
+                       |
+Execution Layer   manifest_loader -> assembler -> writer -> docx
+                  AI generates content; deterministic code owns document structure
+                       |
+Verification      Structural: validation/ (page_setup, style, image_fit, overrides)
+                  Visual: LibreOffice headless -> PNG -> Pillow checks
+                  Both must pass for the document to be considered correct
+                       |
+Runtime Layer     provider_adapter (OpenAI-compatible dispatch)
+                  prompt_runtime (role composition with cognition layer)
+                  agent_runtime (6 runtime roles)
+                       |
+Trace Layer       Checkpoints, stage history, event logs, review ledgers
+                  Platform-level memory, not just file tracking
+```
+
+## Development
+
+```bash
+# Run tests
 .venv/bin/pytest -q
+
+# Run specific test
+.venv/bin/pytest tests/test_golden_path.py -v
+
+# Check package integrity
+officex doctor --as-json
 ```
 
-Useful OfficeX runtime commands:
+## License
 
-```bash
-.venv/bin/officex doctor --workspace-root /tmp/officex-workspaces --sandbox-root /tmp/officex-sandboxes --desktop-shell-dir /Users/nihao/Documents/Playground/document-ops-system/desktop --as-json
-.venv/bin/officex render-boundary --workspace-root /tmp/officex-workspaces --sandbox-root /tmp/officex-sandboxes --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex workspace init --workspace-id demo --workspace-root /tmp/officex-workspaces --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex sandbox create --run-id demo-run --sandbox-root /tmp/officex-sandboxes --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex task run-docx-mvp --run-id demo-run --sandbox-root /tmp/officex-sandboxes --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex task inspect --run-id demo-run --sandbox-root /tmp/officex-sandboxes --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex task build-review-ledger --review-findings /tmp/officex-review-input.json --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex task extract-anchors --candidate-docx /tmp/officex-sandboxes/demo-run/candidate/minimal_writer_demo.docx --review-ledger /tmp/officex-review-ledger.json --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex task apply-patch-bundle --patch-bundle /tmp/officex-patch-bundle.json --candidate-docx /tmp/officex-sandboxes/demo-run/candidate/minimal_writer_demo.docx --anchor-snapshot /tmp/officex-live-anchor-snapshot.json --dry-run --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex provider list
-.venv/bin/python -m tools.report_scaffold_v3.cli officex provider build-request --provider openai --role orchestrator --run-id demo-run --sandbox-root /tmp/officex-sandboxes --config-field api_key=demo --config-field model_id=gpt-5.4 --as-json
-.venv/bin/python -m tools.report_scaffold_v3.cli officex trace checkpoint --title "checkpoint title"
-.venv/bin/python -m tools.report_scaffold_v3.cli index-trace
-```
-
-Desktop-shell development entry:
-
-```bash
-cd desktop
-bun install
-bun run app
-```
-
-The current app MVP is not a full document workbench. It is a product entry
-surface that:
-
-- checks whether this Mac is ready
-- runs `doctor`
-- runs `render-boundary`
-- launches one controlled `docx` task and exposes candidate/report artifacts
-
-Legacy root commands such as `build-word` and `validate-word` remain callable as
-deterministic compatibility primitives, but they are not the preferred OfficeX
-runtime surface.
-
-## Governance Entry Points
-
-- [PROJECT.md](/Users/nihao/Documents/Playground/document-ops-system/PROJECT.md)
-- [AGENTS.md](/Users/nihao/Documents/Playground/document-ops-system/AGENTS.md)
-- [docs/ACTIVE_RULES_AND_PATHS.md](/Users/nihao/Documents/Playground/document-ops-system/docs/ACTIVE_RULES_AND_PATHS.md)
-- [docs/ARCHITECTURE.md](/Users/nihao/Documents/Playground/document-ops-system/docs/ARCHITECTURE.md)
-- [docs/blueprints/OFFICEX_DOCX_MVP_BLUEPRINT.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_DOCX_MVP_BLUEPRINT.md)
-- [docs/blueprints/OFFICEX_DOCUMENT_EDIT_SANDBOX.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_DOCUMENT_EDIT_SANDBOX.md)
-- [docs/blueprints/OFFICEX_EDITOR_COMPATIBILITY_AND_CALLABILITY.md](/Users/nihao/Documents/Playground/document-ops-system/docs/blueprints/OFFICEX_EDITOR_COMPATIBILITY_AND_CALLABILITY.md)
-- [docs/VISUAL_AUDIT_REQUIREMENTS.md](/Users/nihao/Documents/Playground/document-ops-system/docs/VISUAL_AUDIT_REQUIREMENTS.md)
-- [docs/REVIEW_ANCHOR_PROTOCOL.md](/Users/nihao/Documents/Playground/document-ops-system/docs/REVIEW_ANCHOR_PROTOCOL.md)
-- [docs/CONSTRAINT_INDEX.md](/Users/nihao/Documents/Playground/document-ops-system/docs/CONSTRAINT_INDEX.md)
-- [harnesses/INDEX.md](/Users/nihao/Documents/Playground/document-ops-system/harnesses/INDEX.md)
-- [docs/PRODUCT_ROADMAP.md](/Users/nihao/Documents/Playground/document-ops-system/docs/PRODUCT_ROADMAP.md)
+MIT

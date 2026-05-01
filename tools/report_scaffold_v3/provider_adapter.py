@@ -77,7 +77,7 @@ def _dispatch_openai_compatible(
         {"role": "user", "content": envelope.goal},
     ]
 
-    logger.info(
+    logger.debug(
         "Dispatching to %s model=%s via %s",
         envelope.provider_id,
         envelope.model_id,
