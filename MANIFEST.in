@@ -1,0 +1,10 @@
+include LICENSE
+include CONSTITUTION.md
+include README.md
+include README_CN.md
+
+recursive-include manifests *.yml *.yaml *.md
+recursive-include imports *.docx *.json *.md
+recursive-include prompts *.md
+recursive-include sources *.yml *.md
+recursive-include skills *.md

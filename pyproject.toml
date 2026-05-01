@@ -52,4 +52,13 @@ testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["tools*"]
+include = ["tools*", "officex*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "*.yml",
+    "*.yaml",
+    "*.md",
+    "*.docx",
+    "*.json",
+]
