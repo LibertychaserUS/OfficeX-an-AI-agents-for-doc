@@ -8,10 +8,14 @@
 
 ## 系统要求
 
-- **操作系统**: macOS, Linux（不支持 Windows）
-- **Python**: 3.11+
-- **LibreOffice**（可选）: 用于视觉审计 PNG 渲染
-- 任何 OpenAI 兼容 API 端点（用于 AI 功能）
+| 组件 | 要求 |
+|------|------|
+| **操作系统** | macOS 10.9+（Intel）、macOS 11+（Apple Silicon）、Linux（glibc 2.28+，x86_64/aarch64） |
+| **Python** | 3.11+ |
+| **LibreOffice** | 可选。视觉审计（PNG 渲染）需要 |
+| **API Key** | 可选。AI 驱动的 `generate` 命令需要。支持任何 OpenAI 兼容端点 |
+
+> 当前不支持 Windows。所有原生依赖（pymupdf、lxml、numpy、Pillow）均提供 macOS 和 Linux 的预编译 wheel。
 
 ## OfficeX 是什么？
 

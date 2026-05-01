@@ -8,10 +8,14 @@
 
 ## System Requirements
 
-- **OS**: macOS, Linux (Windows not supported)
-- **Python**: 3.11+
-- **LibreOffice** (optional): For visual audit PNG rendering
-- Any OpenAI-compatible API endpoint for AI features
+| Component | Requirement |
+|-----------|-------------|
+| **OS** | macOS 10.9+ (Intel), macOS 11+ (Apple Silicon), Linux (glibc 2.28+, x86_64/aarch64) |
+| **Python** | 3.11+ |
+| **LibreOffice** | Optional. Required for visual audit (PNG rendering) |
+| **API Key** | Optional. Required for AI-powered `generate` command. Any OpenAI-compatible endpoint |
+
+> Windows is not currently supported. All native dependencies (pymupdf, lxml, numpy, Pillow) provide wheels for macOS and Linux.
 
 ## What is OfficeX?
 
