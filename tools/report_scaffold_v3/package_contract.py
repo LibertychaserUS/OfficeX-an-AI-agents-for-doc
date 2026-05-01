@@ -51,6 +51,7 @@ CORE_MODULES: tuple[CoreModuleSpec, ...] = (
     CoreModuleSpec("product_models.py", "tools.report_scaffold_v3.product_models", "OfficeX product-facing models"),
     CoreModuleSpec("prompt_runtime.py", "tools.report_scaffold_v3.prompt_runtime", "OfficeX prompt runtime"),
     CoreModuleSpec("provider_runtime.py", "tools.report_scaffold_v3.provider_runtime", "OfficeX provider runtime"),
+    CoreModuleSpec("provider_adapter.py", "tools.report_scaffold_v3.provider_adapter", "OfficeX provider dispatch adapter"),
     CoreModuleSpec("publication.py", "tools.report_scaffold_v3.publication", "canonical publication module"),
     CoreModuleSpec("render_boundary_runtime.py", "tools.report_scaffold_v3.render_boundary_runtime", "OfficeX renderer boundary runtime"),
     CoreModuleSpec("review_runtime.py", "tools.report_scaffold_v3.review_runtime", "OfficeX review prep runtime"),

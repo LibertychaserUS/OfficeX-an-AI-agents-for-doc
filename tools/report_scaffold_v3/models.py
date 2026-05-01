@@ -297,7 +297,7 @@ ApprovalMode = Literal[
     "full_auto_in_sandbox",
 ]
 
-ProviderDispatchMode = Literal["dry_run"]
+ProviderDispatchMode = Literal["dry_run", "live"]
 ProviderResponseContractKind = Literal[
     "plan_object",
     "section_draft",

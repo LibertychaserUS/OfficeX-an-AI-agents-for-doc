@@ -12,6 +12,7 @@ dependencies = [
   "deepdiff==8.6.2",
   "lxml==6.0.2",
   "numpy>=1.24",
+  "openai>=1.0",
   "packaging==26.0",
   "Pillow==11.3.0",
   "pydantic==2.12.5",
