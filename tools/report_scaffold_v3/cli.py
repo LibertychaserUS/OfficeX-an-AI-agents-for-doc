@@ -1259,6 +1259,13 @@ def officex_profile_validate(
     console.print(f"[green]Profile `{profile_id}` is valid.[/green]")
 
 
+@officex_app.command("serve")
+def officex_serve() -> None:
+    """Start OfficeX as an MCP server (stdio transport)."""
+    from .mcp_server import main as mcp_main
+    mcp_main()
+
+
 @officex_app.command("diff")
 def officex_diff(
     docx_a: Path = typer.Option(..., "--a", help="First docx file."),

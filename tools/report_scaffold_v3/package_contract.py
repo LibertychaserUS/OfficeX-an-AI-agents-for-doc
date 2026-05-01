@@ -32,6 +32,7 @@ CORE_MODULES: tuple[CoreModuleSpec, ...] = (
     CoreModuleSpec("docx_inspector.py", "tools.report_scaffold_v3.docx_inspector", "docx inventory import"),
     CoreModuleSpec("font_audit.py", "tools.report_scaffold_v3.font_audit", "font audit module"),
     CoreModuleSpec("manifest_loader.py", "tools.report_scaffold_v3.manifest_loader", "manifest loading"),
+    CoreModuleSpec("mcp_server.py", "tools.report_scaffold_v3.mcp_server", "OfficeX MCP server"),
     CoreModuleSpec("models.py", "tools.report_scaffold_v3.models", "shared models"),
     CoreModuleSpec("ooxml_inspector.py", "tools.report_scaffold_v3.ooxml_inspector", "OOXML inspection"),
     CoreModuleSpec("ooxml_styles.py", "tools.report_scaffold_v3.ooxml_styles", "OOXML style extraction"),
