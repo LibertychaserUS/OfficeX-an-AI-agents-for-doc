@@ -5,20 +5,18 @@ from pathlib import Path
 from tools.report_scaffold_v3 import product_entry
 
 
-def test_product_entry_launches_app_when_no_args(monkeypatch):
-    launched: list[Path] = []
+def test_product_entry_shows_banner_when_no_args(monkeypatch):
+    banner_shown = []
 
-    def fake_launch_app() -> Path:
-        path = Path("/tmp/officex-desktop-app")
-        launched.append(path)
-        return path
+    def fake_show_banner() -> None:
+        banner_shown.append(True)
 
-    monkeypatch.setattr(product_entry, "launch_officex_app", fake_launch_app)
+    monkeypatch.setattr(product_entry, "_show_banner", fake_show_banner)
 
     exit_code = product_entry.main([])
 
     assert exit_code == 0
-    assert launched == [Path("/tmp/officex-desktop-app")]
+    assert banner_shown == [True]
 
 
 def test_product_entry_routes_doctor_to_officex_cli(monkeypatch):

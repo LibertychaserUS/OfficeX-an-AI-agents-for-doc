@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import sys
 from typing import Sequence
 
@@ -7,7 +8,6 @@ from click.exceptions import Exit as ClickExit
 from typer.main import get_command
 
 from .cli import officex_app
-from .product_common import launch_desktop_shell, resolve_desktop_shell_dir
 
 
 def _invoke_officex_cli(argv: list[str]) -> int:
@@ -22,14 +22,22 @@ def _invoke_officex_cli(argv: list[str]) -> int:
     return result if isinstance(result, int) else 0
 
 
-def launch_officex_app() -> object:
-    return launch_desktop_shell(resolve_desktop_shell_dir())
+def _show_banner() -> None:
+    from .cli_banner import render_startup_banner
+
+    import platform
+    renderer_available = shutil.which("soffice") is not None
+    render_startup_banner(
+        python_version=platform.python_version(),
+        renderer_available=renderer_available,
+        renderer_name="LibreOffice" if renderer_available else "",
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(argv if argv is not None else sys.argv[1:])
     if not args:
-        launch_officex_app()
+        _show_banner()
         return 0
     if args[0] == "runtime":
         return _invoke_officex_cli(args[1:])
