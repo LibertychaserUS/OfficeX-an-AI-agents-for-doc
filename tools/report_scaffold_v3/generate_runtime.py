@@ -111,14 +111,7 @@ def _parse_ai_response_to_build_source(
     output_name: str,
 ) -> BuildSourceManifest:
     """Parse AI JSON response into a BuildSourceManifest."""
-    # Strip markdown fences if AI wrapped in ```json ... ```
-    text = response_text.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        # Remove first and last fence lines
-        lines = [l for l in lines if not l.strip().startswith("```")]
-        text = "\n".join(lines).strip()
-
+    text = _extract_json_from_response(response_text)
     data = json.loads(text)
 
     blocks: list[dict] = []
@@ -141,6 +134,51 @@ def _parse_ai_response_to_build_source(
         output_name=output_name,
         blocks=blocks,
     )
+
+
+def _extract_json_from_response(response_text: str) -> str:
+    """Extract JSON from AI response, stripping markdown fences and preamble."""
+    text = response_text.strip()
+
+    # Strip ```json ... ``` fences
+    if "```" in text:
+        lines = text.split("\n")
+        in_fence = False
+        json_lines = []
+        for line in lines:
+            if line.strip().startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                json_lines.append(line)
+        if json_lines:
+            text = "\n".join(json_lines).strip()
+
+    # Try to find JSON object boundaries if there's preamble text
+    if not text.startswith("{"):
+        brace_start = text.find("{")
+        if brace_start >= 0:
+            # Find matching closing brace
+            depth = 0
+            for i in range(brace_start, len(text)):
+                if text[i] == "{":
+                    depth += 1
+                elif text[i] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        text = text[brace_start:i + 1]
+                        break
+
+    return text
+
+
+JSON_REPAIR_PROMPT = (
+    "Your previous response was not valid JSON. Please return ONLY a valid "
+    "JSON object with this structure: "
+    '{"title": "...", "sections": [{"heading": "...", "paragraphs": ["..."]}]}. '
+    "No markdown fences, no explanation, just the JSON object. "
+    "Here was your previous response that needs to be fixed:\n\n"
+)
 
 
 def run_generate(
@@ -247,21 +285,52 @@ def run_generate(
 
     # ---- Step 2: Parse AI response into BuildSourceManifest ----
     logger.debug("Step 2: Parsing AI response into build source")
+    build_source = None
+    parse_error = None
+
     try:
         build_source = _parse_ai_response_to_build_source(
-            ai_text,
-            document_id=document_id,
-            output_name=output_name,
+            ai_text, document_id=document_id, output_name=output_name,
         )
     except (json.JSONDecodeError, KeyError, TypeError) as exc:
-        logger.error("Failed to parse AI response: %s", exc)
-        return GenerateReport(
-            run_id=run_id,
-            status="ai_failed",
-            ai_model=resolved_model,
-            ai_tokens=ai_tokens,
-            error_message=f"AI response parse failed: {exc}",
-        )
+        parse_error = exc
+        logger.debug("First parse failed (%s), attempting JSON repair request", exc)
+
+    # If first parse failed, ask AI to fix its response
+    if build_source is None and parse_error is not None:
+        try:
+            repair_response = client.chat.completions.create(
+                model=resolved_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt},
+                    {"role": "assistant", "content": ai_text},
+                    {"role": "user", "content": JSON_REPAIR_PROMPT + ai_text[:2000]},
+                ],
+                temperature=0.1,
+            )
+            repair_text = repair_response.choices[0].message.content or ""
+            (output_dir / "ai_repair_response.txt").write_text(repair_text, encoding="utf-8")
+
+            if repair_response.usage:
+                ai_tokens = {
+                    "prompt_tokens": ai_tokens.get("prompt_tokens", 0) + repair_response.usage.prompt_tokens,
+                    "completion_tokens": ai_tokens.get("completion_tokens", 0) + repair_response.usage.completion_tokens,
+                    "total_tokens": ai_tokens.get("total_tokens", 0) + repair_response.usage.total_tokens,
+                }
+
+            build_source = _parse_ai_response_to_build_source(
+                repair_text, document_id=document_id, output_name=output_name,
+            )
+        except (json.JSONDecodeError, KeyError, TypeError, Exception) as exc2:
+            logger.error("JSON repair also failed: %s", exc2)
+            return GenerateReport(
+                run_id=run_id,
+                status="ai_failed",
+                ai_model=resolved_model,
+                ai_tokens=ai_tokens,
+                error_message=f"AI response parse failed after repair attempt: {parse_error} -> {exc2}",
+            )
 
     # Save parsed build source
     (output_dir / "build_source.json").write_text(

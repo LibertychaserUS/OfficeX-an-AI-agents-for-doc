@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from dataclasses import dataclass
 from typing import Literal
 
@@ -62,8 +63,10 @@ def _dispatch_openai_compatible(
     *,
     api_key: str,
     base_url: str | None = None,
+    max_retries: int = 2,
+    retry_delay: float = 2.0,
 ) -> ProviderDispatchResult:
-    """Dispatch via OpenAI-compatible chat completions API."""
+    """Dispatch via OpenAI-compatible chat completions API with retry."""
     from openai import OpenAI
 
     client_kwargs: dict = {"api_key": api_key}
@@ -84,38 +87,47 @@ def _dispatch_openai_compatible(
         base_url or "default",
     )
 
-    try:
-        response = client.chat.completions.create(
-            model=envelope.model_id,
-            messages=messages,
-            temperature=0.3,
-        )
-        choice = response.choices[0]
-        usage_dict = None
-        if response.usage:
-            usage_dict = {
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
-            }
+    last_error = ""
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.chat.completions.create(
+                model=envelope.model_id,
+                messages=messages,
+                temperature=0.3,
+            )
+            choice = response.choices[0]
+            usage_dict = None
+            if response.usage:
+                usage_dict = {
+                    "prompt_tokens": response.usage.prompt_tokens,
+                    "completion_tokens": response.usage.completion_tokens,
+                    "total_tokens": response.usage.total_tokens,
+                }
 
-        return ProviderDispatchResult(
-            envelope_id=envelope.envelope_id,
-            provider_id=envelope.provider_id,
-            model_id=envelope.model_id,
-            status="success",
-            response_text=choice.message.content or "",
-            usage=usage_dict,
-        )
-    except Exception as exc:
-        logger.error("Provider dispatch failed: %s", exc)
-        return ProviderDispatchResult(
-            envelope_id=envelope.envelope_id,
-            provider_id=envelope.provider_id,
-            model_id=envelope.model_id,
-            status="error",
-            error_message=str(exc),
-        )
+            return ProviderDispatchResult(
+                envelope_id=envelope.envelope_id,
+                provider_id=envelope.provider_id,
+                model_id=envelope.model_id,
+                status="success",
+                response_text=choice.message.content or "",
+                usage=usage_dict,
+            )
+        except Exception as exc:
+            last_error = str(exc)
+            if attempt < max_retries:
+                logger.debug("Attempt %d failed (%s), retrying in %.1fs", attempt + 1, last_error, retry_delay)
+                time.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                logger.error("Provider dispatch failed after %d attempts: %s", max_retries + 1, last_error)
+
+    return ProviderDispatchResult(
+        envelope_id=envelope.envelope_id,
+        provider_id=envelope.provider_id,
+        model_id=envelope.model_id,
+        status="error",
+        error_message=last_error,
+    )
 
 
 def dispatch_envelope(

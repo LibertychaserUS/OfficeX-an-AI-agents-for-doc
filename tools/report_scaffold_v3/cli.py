@@ -1239,6 +1239,11 @@ def officex_generate(
         "--model",
         help="Provider model id.",
     ),
+    profile: Optional[str] = typer.Option(
+        None,
+        "--profile",
+        help="Document profile to use (e.g. a4_academic, letter_business).",
+    ),
     output_dir: Optional[Path] = typer.Option(
         None,
         "--output-dir",
@@ -1256,6 +1261,15 @@ def officex_generate(
     ),
 ) -> None:
     from .generate_runtime import run_generate
+
+    # If profile specified, activate it before generating
+    if profile:
+        from .profile_runtime import activate_profile
+        try:
+            activate_profile(profile)
+        except ValueError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(code=1) from exc
 
     report = run_generate(
         prompt=prompt,
