@@ -44,7 +44,14 @@ Return ONLY a JSON object with this exact schema:
   "sections": [
     {{
       "heading": "Section Heading",
-      "paragraphs": ["Paragraph 1 text.", "Paragraph 2 text."]
+      "paragraphs": ["Paragraph 1 text.", "Paragraph 2 text."],
+      "tables": [
+        {{
+          "caption": "Table 1: Description",
+          "headers": ["Column A", "Column B"],
+          "rows": [["cell 1a", "cell 1b"], ["cell 2a", "cell 2b"]]
+        }}
+      ]
     }}
   ]
 }}
@@ -52,6 +59,7 @@ Return ONLY a JSON object with this exact schema:
 Rules:
 - Return valid JSON only, no markdown fences, no explanation outside the JSON
 - Each section must have a "heading" (string) and "paragraphs" (list of strings)
+- Tables are optional: include them only when tabular data is appropriate
 - Write substantive, professional content — not placeholder text
 - Match the tone and depth appropriate for the document topic
 
@@ -128,6 +136,15 @@ def _parse_ai_response_to_build_source(
         for para_text in section.get("paragraphs", []):
             if para_text.strip():
                 blocks.append({"kind": "paragraph", "role": "body", "text": para_text})
+        # Tables within sections
+        for table_data in section.get("tables", []):
+            blocks.append({
+                "kind": "table",
+                "role": "table",
+                "caption": table_data.get("caption", ""),
+                "headers": table_data.get("headers", []),
+                "rows": table_data.get("rows", []),
+            })
 
     return BuildSourceManifest(
         document_id=document_id,
