@@ -10,6 +10,39 @@
 
 ---
 
+## Branches
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Stable release. Everything here works. |
+| `dev` | Active development. May contain incomplete features. |
+
+## What Works Out of the Box (no API key needed)
+
+These commands work immediately after install:
+
+```bash
+officex                              # Brand banner + environment scan
+officex init                         # Create a workspace
+officex doctor --as-json             # Environment readiness check
+officex profile list                 # List document profiles
+officex profile create my_profile    # Create a new profile
+officex task run-docx-mvp            # Deterministic docx from manifests
+officex audit visual --candidate-docx file.docx  # Visual QA (needs LibreOffice)
+```
+
+## AI-Powered Commands (needs API key)
+
+These commands require an OpenAI-compatible API key:
+
+```bash
+export OFFICEX_PROVIDER_API_KEY="your-key"
+export OFFICEX_PROVIDER_BASE_URL="https://your-provider/v1"
+
+officex generate --prompt "..."                    # Short document
+officex generate-long --outline outlines/plan.yml  # Long document
+```
+
 ## System Requirements
 
 | Component | Requirement |

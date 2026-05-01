@@ -6,6 +6,39 @@
 
 ---
 
+## 分支
+
+| 分支 | 用途 |
+|------|------|
+| `main` | 稳定发布版。所有功能均可正常使用。 |
+| `dev` | 活跃开发版。可能包含未完成的功能。 |
+
+## 开箱即用（无需 API Key）
+
+安装后立即可用的命令：
+
+```bash
+officex                              # 品牌界面 + 环境扫描
+officex init                         # 创建工作空间
+officex doctor --as-json             # 环境就绪检查
+officex profile list                 # 列出文档配置
+officex profile create my_profile    # 运行时创建新配置
+officex task run-docx-mvp            # 从 manifest 确定性生成 docx
+officex audit visual --candidate-docx file.docx  # 视觉 QA（需要 LibreOffice）
+```
+
+## AI 驱动的命令（需要 API Key）
+
+以下命令需要 OpenAI 兼容的 API Key：
+
+```bash
+export OFFICEX_PROVIDER_API_KEY="你的 key"
+export OFFICEX_PROVIDER_BASE_URL="https://你的提供商/v1"
+
+officex generate --prompt "..."                    # 短文档
+officex generate-long --outline outlines/plan.yml  # 长文档
+```
+
 ## 系统要求
 
 | 组件 | 要求 |
