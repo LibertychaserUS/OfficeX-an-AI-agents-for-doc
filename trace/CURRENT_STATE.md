@@ -70,12 +70,30 @@
 - Historical case context lives outside the active OfficeX repository and is
   not part of the current default runtime path
 - Current sandbox posture: platform-owned document-edit sandbox root established for mutable session copies
+- Current CLI-surface posture: `cli.py` slimmed from 1814 to ~1400 lines by
+  extracting 26 render functions into `cli_render.py`; new `officex audit visual`
+  command family added for visual QA
+- Current validation posture: monolithic `validation.py` (823 lines) decomposed
+  into `validation/` subpackage with focused modules for page_setup,
+  style_contract, image_fit, and override_detection
+- Current writer posture: `writer.py` now warns on unknown write-contract fields
+  in paragraph_format and run_format instead of silently skipping them
+- Current visual-audit posture: LibreOffice headless rendering pipeline
+  (`visual_audit.py`) and deterministic Pillow-based page checks
+  (`visual_audit_checks.py`) are now live; `officex audit visual` CLI command
+  exposes rendering and visual QA as a first-class runtime action
+- Current golden-path posture: end-to-end pipeline test now cross-validates
+  generated docx through both structural verification (open docx, assert
+  paragraphs/styles/headings/geometry) and visual verification (render PNG,
+  check blank pages/aspect ratio); both must pass
 
 ## Current Priorities
 
 - stabilize `OfficeX` docx-first MVP governance
 - keep AI/program boundaries explicit for document generation and revision
 - build visual-audit and review-anchor primitives before broader UI work
+  (visual-audit rendering and deterministic checks now implemented;
+  review-anchor primitives were established in earlier checkpoints)
 - wire the new domain/prompt/memory/provider/runtime contracts into the first
   executable OfficeX implementation slice
 - expand the first runtime CLI slice into richer task/workspace/provider flows
@@ -297,3 +315,7 @@
   hardening recorded in `CHECKPOINT_24`
 - Historical legacy checkpoints remain outside the active OfficeX repository
 - Platform trace indexes should be regenerated from the local trace root only
+- Claude Code session: backend generation chain slimmed, validation decomposed,
+  writer hardened, golden-path end-to-end test added, visual audit pipeline
+  (LibreOffice headless → PNG → deterministic checks) implemented, `officex
+  audit visual` CLI command added — recorded in `CHECKPOINT_27`
