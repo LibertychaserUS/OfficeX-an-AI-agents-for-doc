@@ -1104,6 +1104,43 @@ def officex_trace_checkpoint(
     console.print(render_officex_trace_checkpoint(payload))
 
 
+@officex_app.command("init")
+def officex_init(
+    target_dir: Path = typer.Argument(
+        ".",
+        help="Directory to initialize. Defaults to current directory.",
+    ),
+    profile: str = typer.Option(
+        "a4_academic",
+        "--profile",
+        help="Default profile for this workspace.",
+    ),
+    as_json: bool = typer.Option(
+        False, "--as-json", help="Emit machine-readable JSON.",
+    ),
+) -> None:
+    from .init_runtime import init_workspace
+
+    try:
+        result = init_workspace(target_dir.expanduser().resolve(), profile_id=profile)
+    except FileExistsError as exc:
+        console.print(f"[yellow]{exc}[/yellow]")
+        raise typer.Exit(code=1) from exc
+
+    if as_json:
+        console.print_json(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+
+    console.print(f"[green]Initialized OfficeX workspace at:[/green] {result['workspace_path']}")
+    console.print(f"Profile: {result['profile']}")
+    console.print(f"Example outline: {result['example_outline']}")
+    console.print()
+    console.print("[dim]Next steps:[/dim]")
+    console.print("  1. Edit outlines/example.yml with your document structure")
+    console.print("  2. Add source materials to materials/")
+    console.print("  3. Run: officex generate-long --outline outlines/example.yml --model <model>")
+
+
 @officex_profile_app.command("list")
 def officex_profile_list(
     as_json: bool = typer.Option(
