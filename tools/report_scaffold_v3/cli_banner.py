@@ -19,9 +19,12 @@ from rich.text import Text
 
 
 COMMAND_FAMILIES = [
-    ("generate", "Generate a document from a prompt (end-to-end)"),
+    ("generate", "Generate a short document from a prompt"),
+    ("generate-long", "Generate a long document from an outline"),
     ("doctor", "Full environment readiness check"),
     ("audit visual", "Render docx to PNG and run visual QA"),
+    ("profile list", "List available document profiles"),
+    ("profile create", "Create a new profile at runtime"),
     ("task run-docx-mvp", "Run deterministic docx generation pipeline"),
     ("task apply-patch-bundle", "Apply deterministic document patches"),
     ("provider list", "List configured providers"),

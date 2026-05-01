@@ -1222,6 +1222,79 @@ def officex_profile_validate(
     console.print(f"[green]Profile `{profile_id}` is valid.[/green]")
 
 
+@officex_app.command("generate-long")
+def officex_generate_long(
+    outline: Path = typer.Option(
+        ...,
+        "--outline",
+        help="YAML outline file defining sections, requirements, and materials.",
+    ),
+    provider: str = typer.Option(
+        "compatible_local",
+        "--provider",
+        help="OfficeX provider id.",
+    ),
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        help="Provider model id.",
+    ),
+    profile: Optional[str] = typer.Option(
+        None,
+        "--profile",
+        help="Document profile to use.",
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None,
+        "--output-dir",
+        help="Output directory for generated artifacts.",
+    ),
+    no_visual: bool = typer.Option(
+        False,
+        "--no-visual",
+        help="Skip visual audit step.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--as-json",
+        help="Emit machine-readable JSON.",
+    ),
+) -> None:
+    from .long_generate_runtime import run_long_generate
+
+    if profile:
+        from .profile_runtime import activate_profile
+        try:
+            activate_profile(profile)
+        except ValueError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(code=1) from exc
+
+    report = run_long_generate(
+        outline_path=outline.expanduser().resolve(),
+        provider_id=provider,
+        model_id=model,
+        output_dir=output_dir.expanduser().resolve() if output_dir else None,
+        include_visual_audit=not no_visual,
+    )
+
+    if as_json:
+        console.print_json(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        if report.status not in {"success", "validation_warnings"}:
+            raise typer.Exit(code=1)
+        return
+
+    if report.status in {"ai_failed", "build_failed"}:
+        console.print(f"[red]Generate failed: {report.error_message}[/red]")
+        raise typer.Exit(code=1)
+
+    console.print(f"[green]Generated:[/green] {report.output_docx}")
+    console.print(f"Model: {report.ai_model} | Tokens: {report.ai_tokens}")
+    console.print(f"Validation: {report.validation_errors} error(s), {report.validation_warnings} warning(s)")
+    if report.page_count:
+        console.print(f"Visual: {report.page_count} page(s), {report.visual_findings} finding(s)")
+
+
 @officex_app.command("generate")
 def officex_generate(
     prompt: str = typer.Option(

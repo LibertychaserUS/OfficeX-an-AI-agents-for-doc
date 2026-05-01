@@ -1,0 +1,58 @@
+title: "Mobile Study Scheduler - Project Proposal"
+sections:
+  - section_id: executive_summary
+    heading: "Executive Summary"
+    requirements: >
+      Concise overview of the project. State the problem, proposed solution,
+      and expected outcomes in 2-3 paragraphs. This sets the tone for the
+      entire document.
+    max_tokens: 1000
+
+  - section_id: problem_statement
+    heading: "Problem Statement"
+    requirements: >
+      Describe the challenges university students face with study scheduling.
+      Use specific pain points: overlapping deadlines, inconsistent workloads,
+      poor time estimation. Reference the executive summary's framing.
+    max_tokens: 1500
+
+  - section_id: proposed_solution
+    heading: "Proposed Solution"
+    requirements: >
+      Describe the mobile app's core features: syllabus parsing, smart
+      scheduling, deadline tracking, workload balancing. Connect each feature
+      back to the problems identified in the Problem Statement section.
+      Use consistent terminology established in earlier sections.
+    max_tokens: 2000
+
+  - section_id: technical_architecture
+    heading: "Technical Architecture"
+    requirements: >
+      Describe the tech stack and system design. Include: frontend framework,
+      backend services, database, AI/ML components for schedule optimization.
+      Keep technical depth appropriate for a proposal (not a spec).
+    max_tokens: 1500
+
+  - section_id: timeline
+    heading: "Implementation Timeline"
+    requirements: >
+      Break the project into phases with clear milestones.
+      Phase 1: Research and design (2 months).
+      Phase 2: Core development (3 months).
+      Phase 3: Testing and launch (2 months).
+      Reference deliverables from the Technical Architecture section.
+    max_tokens: 1000
+
+  - section_id: budget
+    heading: "Budget Estimate"
+    requirements: >
+      Provide a high-level budget breakdown: development, infrastructure,
+      testing, marketing. Keep it realistic for a university project context.
+    max_tokens: 800
+
+review_criteria:
+  - "All sections must use consistent terminology"
+  - "Later sections must reference conclusions from earlier sections"
+  - "Professional tone throughout, no casual language"
+  - "Specific claims should be supported with reasoning"
+  - "The document should read as if written by one author"
