@@ -14,6 +14,7 @@ from rich.text import Text
 
 
 COMMAND_FAMILIES = [
+    ("generate", "Generate a document from a prompt (end-to-end)"),
     ("doctor", "Environment readiness check"),
     ("render-boundary", "Renderer capability matrix"),
     ("workspace init", "Initialize a new workspace"),
