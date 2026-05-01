@@ -16,10 +16,25 @@ import numpy as np
 
 from .models import VisualAuditFinding
 
-# A4 aspect ratio: height / width = 297/210 ≈ 1.4143
-A4_ASPECT_RATIO = 297.0 / 210.0
-# US Letter: 11/8.5 ≈ 1.2941
-US_LETTER_ASPECT_RATIO = 11.0 / 8.5
+# Known paper aspect ratios (height / width)
+PAPER_ASPECT_RATIOS = {
+    "a4": 297.0 / 210.0,          # 1.4143
+    "letter": 11.0 / 8.5,          # 1.2941
+    "legal": 14.0 / 8.5,           # 1.6471
+    "a3": 420.0 / 297.0,           # 1.4143
+    "b5": 250.0 / 176.0,           # 1.4205
+}
+
+
+def aspect_ratio_from_page_setup(page_setup: dict | None) -> float | None:
+    """Derive expected aspect ratio from a template_profile page_setup dict."""
+    if not page_setup:
+        return None
+    width = page_setup.get("page_width_pt")
+    height = page_setup.get("page_height_pt")
+    if width and height and width > 0:
+        return height / width
+    return None
 
 
 def check_page_not_blank(png_path: Path, *, white_threshold: int = 250, max_white_ratio: float = 0.995) -> VisualAuditFinding | None:
@@ -52,10 +67,11 @@ def check_page_dimensions(
 ) -> VisualAuditFinding | None:
     """Verify page aspect ratio matches expected paper size.
 
-    If expected_ratio is None, defaults to A4 (1.4143).
+    If expected_ratio is None, no check is performed (caller should
+    derive ratio from template_profile or pass explicitly).
     """
     if expected_ratio is None:
-        expected_ratio = A4_ASPECT_RATIO
+        return None
 
     with Image.open(png_path) as img:
         width, height = img.size
@@ -142,15 +158,22 @@ def run_visual_checks(
     png_paths: list[Path],
     *,
     expected_aspect_ratio: float | None = None,
+    page_setup: dict | None = None,
 ) -> list[VisualAuditFinding]:
-    """Run all deterministic visual checks on a list of page PNGs."""
+    """Run all deterministic visual checks on a list of page PNGs.
+
+    If page_setup is provided, derives aspect ratio from it.
+    If expected_aspect_ratio is provided, uses it directly.
+    If neither is provided, aspect ratio check is skipped.
+    """
+    ratio = expected_aspect_ratio or aspect_ratio_from_page_setup(page_setup)
     findings: list[VisualAuditFinding] = []
     for png_path in png_paths:
         finding = check_page_not_blank(png_path)
         if finding:
             findings.append(finding)
 
-        finding = check_page_dimensions(png_path, expected_ratio=expected_aspect_ratio)
+        finding = check_page_dimensions(png_path, expected_ratio=ratio)
         if finding:
             findings.append(finding)
 

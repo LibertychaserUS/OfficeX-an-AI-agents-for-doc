@@ -1187,6 +1187,7 @@ def officex_audit_visual(
 ) -> None:
     from .visual_audit import render_docx_to_png
     from .visual_audit_checks import run_visual_checks
+    from .manifest_loader import load_template_profile
 
     render_report = render_docx_to_png(
         candidate_docx.expanduser().resolve(),
@@ -1202,7 +1203,14 @@ def officex_audit_visual(
         console.print("Rendering failed. Check logs for details.")
         raise typer.Exit(code=1)
 
-    visual_findings = run_visual_checks(render_report.png_paths)
+    # Derive aspect ratio from active template profile instead of hardcoding
+    try:
+        tp = load_template_profile()
+        page_setup = tp.page_setup if hasattr(tp, "page_setup") else None
+    except Exception:
+        page_setup = None
+
+    visual_findings = run_visual_checks(render_report.png_paths, page_setup=page_setup)
     render_report.findings = visual_findings
 
     payload = render_report.model_dump(mode="json")

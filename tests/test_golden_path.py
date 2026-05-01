@@ -21,7 +21,9 @@ from tools.report_scaffold_v3.visual_audit import render_docx_to_png
 from tools.report_scaffold_v3.visual_audit_checks import (
     check_page_not_blank,
     check_page_dimensions,
+    aspect_ratio_from_page_setup,
 )
+from tools.report_scaffold_v3.manifest_loader import load_template_profile
 
 
 def test_golden_path_pipeline_produces_correct_docx(tmp_path: Path):
@@ -106,9 +108,13 @@ def test_golden_path_pipeline_produces_correct_docx(tmp_path: Path):
         finding = check_page_not_blank(png_path)
         assert finding is None, f"Visual: {finding.message}"
 
-    # cross-check: page aspect ratio must match A4
+    # cross-check: page aspect ratio must match active template profile
+    template_profile = load_template_profile()
+    expected_ratio = aspect_ratio_from_page_setup(
+        template_profile.page_setup if hasattr(template_profile, 'page_setup') else None
+    )
     for png_path in render_report.png_paths:
-        finding = check_page_dimensions(png_path)
+        finding = check_page_dimensions(png_path, expected_ratio=expected_ratio)
         assert finding is None, f"Visual: {finding.message}"
 
 

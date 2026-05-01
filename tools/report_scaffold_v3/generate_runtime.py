@@ -21,7 +21,7 @@ from .manifest_loader import (
     load_template_profile,
     load_write_contract,
 )
-from .models import BuildSourceManifest, ValidationFinding
+from .models import BuildSourceManifest, ValidationFinding, WriteContractManifest
 from .paths import (
     DEFAULT_BASELINE_MANIFEST,
     DEFAULT_WRITE_CONTRACT_MANIFEST,
@@ -34,27 +34,43 @@ from .writer import build_word_candidate
 
 logger = logging.getLogger(__name__)
 
-GENERATE_SYSTEM_PROMPT_SUFFIX = """
+GENERATE_SYSTEM_PROMPT_TEMPLATE = """
 
 You are generating structured content for a document.
 Return ONLY a JSON object with this exact schema:
 
-{
+{{
   "title": "Document Title",
   "sections": [
-    {
+    {{
       "heading": "Section Heading",
       "paragraphs": ["Paragraph 1 text.", "Paragraph 2 text."]
-    }
+    }}
   ]
-}
+}}
 
 Rules:
 - Return valid JSON only, no markdown fences, no explanation outside the JSON
 - Each section must have a "heading" (string) and "paragraphs" (list of strings)
 - Write substantive, professional content — not placeholder text
 - Match the tone and depth appropriate for the document topic
+
+Available paragraph roles in this document profile:
+{available_roles}
 """
+
+
+def _build_generate_system_prompt(
+    role_prompt: str,
+    write_contract: WriteContractManifest,
+) -> str:
+    """Build the system prompt with dynamically available roles."""
+    roles_desc = []
+    for role_name, role_spec in write_contract.paragraph_roles.items():
+        roles_desc.append(f"- {role_name} (style: {role_spec.style})")
+    available_roles = "\n".join(roles_desc) if roles_desc else "- body (style: Normal)"
+    suffix = GENERATE_SYSTEM_PROMPT_TEMPLATE.format(available_roles=available_roles)
+    return role_prompt + suffix
 
 
 @dataclass
@@ -162,10 +178,12 @@ def run_generate(
         baseline = load_baseline_manifest(baseline_manifest_path)
         write_contract = load_write_contract(write_contract_path)
 
-        # Build system prompt from role prompt + generate suffix
+        # Build system prompt from role prompt + dynamic contract info
         from .prompt_runtime import compile_officex_prompt_bundle
         prompt_bundle = compile_officex_prompt_bundle("orchestrator", include_cognition=True)
-        system_prompt = prompt_bundle.compiled_prompt_debug + GENERATE_SYSTEM_PROMPT_SUFFIX
+        system_prompt = _build_generate_system_prompt(
+            prompt_bundle.compiled_prompt_debug, write_contract,
+        )
 
         # Dispatch directly without full envelope (simpler path)
         from .provider_adapter import (
