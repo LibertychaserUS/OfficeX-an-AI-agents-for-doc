@@ -23,6 +23,9 @@ class CriterionResult:
 
 
 # Patterns that indicate auto-checkable criteria
+# These patterns recognize user-defined rules expressed in natural language.
+# Nothing is hardcoded as "must do" — these only activate when the user
+# explicitly states the rule in their review_criteria.
 DETERMINISTIC_PATTERNS = [
     (r"(?:max(?:imum)?|limit|under|fewer\s+than|at\s+most|no\s+more\s+than)\s+(\d+)\s*words?", "max_words"),
     (r"(\d+)\s*words?\s*(?:max|limit|maximum|or\s+less|under|fewer)", "max_words"),
