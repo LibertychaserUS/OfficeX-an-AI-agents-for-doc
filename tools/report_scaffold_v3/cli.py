@@ -1259,6 +1259,88 @@ def officex_profile_validate(
     console.print(f"[green]Profile `{profile_id}` is valid.[/green]")
 
 
+@officex_app.command("diff")
+def officex_diff(
+    docx_a: Path = typer.Option(..., "--a", help="First docx file."),
+    docx_b: Path = typer.Option(..., "--b", help="Second docx file."),
+    output_dir: Path = typer.Option(..., "--output-dir", help="Output directory for diff artifacts."),
+    as_json: bool = typer.Option(False, "--as-json", help="Emit machine-readable JSON."),
+) -> None:
+    from .diff_runtime import run_diff
+
+    report = run_diff(
+        docx_a=docx_a.expanduser().resolve(),
+        docx_b=docx_b.expanduser().resolve(),
+        output_dir=output_dir.expanduser().resolve(),
+    )
+
+    if as_json:
+        console.print_json(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        if report.changed_pages > 0:
+            raise typer.Exit(code=1)
+        return
+
+    console.print(f"Compared: {report.pages_a} page(s) vs {report.pages_b} page(s)")
+    console.print(f"Changed pages: {report.changed_pages}")
+    console.print(f"Overall similarity: {report.overall_similarity:.1%}")
+    if report.changed_pages > 0:
+        for r in report.page_results:
+            if r.changed:
+                console.print(f"  Page {r.page}: {r.similarity:.1%} similar → {r.diff_png_path}")
+
+
+@officex_app.command("edit")
+def officex_edit(
+    docx: Path = typer.Option(
+        ..., "--docx", help="Path to the docx file to edit.",
+    ),
+    instruction: str = typer.Option(
+        ..., "--instruction", help="What to change in the document.",
+    ),
+    provider: str = typer.Option(
+        "compatible_local", "--provider", help="OfficeX provider id.",
+    ),
+    model: Optional[str] = typer.Option(
+        None, "--model", help="Provider model id.",
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None, "--output-dir", help="Output directory.",
+    ),
+    no_visual: bool = typer.Option(
+        False, "--no-visual", help="Skip visual audit.",
+    ),
+    as_json: bool = typer.Option(
+        False, "--as-json", help="Emit machine-readable JSON.",
+    ),
+) -> None:
+    from .edit_runtime import run_edit
+
+    report = run_edit(
+        docx_path=docx.expanduser().resolve(),
+        instruction=instruction,
+        provider_id=provider,
+        model_id=model,
+        output_dir=output_dir.expanduser().resolve() if output_dir else None,
+        include_visual_audit=not no_visual,
+    )
+
+    if as_json:
+        console.print_json(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        if report.status not in {"success", "validation_warnings"}:
+            raise typer.Exit(code=1)
+        return
+
+    if report.status in {"ai_failed", "build_failed"}:
+        console.print(f"[red]Edit failed: {report.error_message}[/red]")
+        raise typer.Exit(code=1)
+
+    console.print(f"[green]Edited:[/green] {report.output_docx}")
+    console.print(f"Model: {report.ai_model} | Tokens: {report.ai_tokens}")
+    console.print(f"Validation: {report.validation_errors} error(s), {report.validation_warnings} warning(s)")
+    if report.page_count:
+        console.print(f"Visual: {report.page_count} page(s), {report.visual_findings} finding(s)")
+
+
 @officex_app.command("generate-long")
 def officex_generate_long(
     outline: Path = typer.Option(

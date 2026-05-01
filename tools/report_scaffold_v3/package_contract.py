@@ -38,6 +38,8 @@ CORE_MODULES: tuple[CoreModuleSpec, ...] = (
     CoreModuleSpec("outline_audit.py", "tools.report_scaffold_v3.outline_audit", "outline audit module"),
     CoreModuleSpec("officex_runtime.py", "tools.report_scaffold_v3.officex_runtime", "OfficeX runtime services"),
     CoreModuleSpec("doctor_runtime.py", "tools.report_scaffold_v3.doctor_runtime", "OfficeX environment doctor"),
+    CoreModuleSpec("diff_runtime.py", "tools.report_scaffold_v3.diff_runtime", "OfficeX visual diff"),
+    CoreModuleSpec("edit_runtime.py", "tools.report_scaffold_v3.edit_runtime", "OfficeX document editing"),
     CoreModuleSpec("generate_runtime.py", "tools.report_scaffold_v3.generate_runtime", "OfficeX generate pipeline"),
     CoreModuleSpec("init_runtime.py", "tools.report_scaffold_v3.init_runtime", "OfficeX workspace init"),
     CoreModuleSpec("long_generate_runtime.py", "tools.report_scaffold_v3.long_generate_runtime", "OfficeX long document generation"),
