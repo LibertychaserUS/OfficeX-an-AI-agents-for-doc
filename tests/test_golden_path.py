@@ -1,19 +1,27 @@
 """End-to-end golden-path test for the full generation chain.
 
 This test runs the complete pipeline from managed manifests through to
-a finished docx, then opens the output and asserts the actual document
-content matches expectations.  It covers:
+a finished docx, then verifies correctness via TWO independent methods:
 
-    manifest_loader -> section_assembler -> writer -> validation -> candidate_audit
+1. Structural verification: open the docx, assert paragraphs, styles,
+   headings, page geometry match expectations.
+2. Visual verification: render docx to PNG via LibreOffice, run
+   deterministic image checks (blank page, aspect ratio, white gaps).
 
-Unlike module-level tests that verify individual stages, this test
-proves that the assembled pipeline produces a correct final artifact.
+Both must pass for the golden path to be considered valid.
+Cross-validation catches issues that either method alone would miss.
 """
 
+import pytest
 from docx import Document
 from pathlib import Path
 
 from tools.report_scaffold_v3.section_pipeline import run_section_pipeline
+from tools.report_scaffold_v3.visual_audit import render_docx_to_png
+from tools.report_scaffold_v3.visual_audit_checks import (
+    check_page_not_blank,
+    check_page_dimensions,
+)
 
 
 def test_golden_path_pipeline_produces_correct_docx(tmp_path: Path):
@@ -80,6 +88,28 @@ def test_golden_path_pipeline_produces_correct_docx(tmp_path: Path):
     for p in normal_paragraphs:
         runs = p.runs
         assert len(runs) >= 1, f"Paragraph '{p.text[:40]}' has no runs"
+
+    # ---- VISUAL AUDIT (cross-validation with structural checks above) ----
+    visual_dir = tmp_path / "visual_audit"
+    render_report = render_docx_to_png(report.output_docx, visual_dir)
+
+    if render_report.status == "renderer_unavailable":
+        pytest.skip("LibreOffice not available; visual cross-validation skipped")
+
+    assert render_report.status == "pass", (
+        f"Render failed: status={render_report.status}"
+    )
+    assert render_report.page_count >= 1, "No pages rendered"
+
+    # cross-check: every rendered page must not be blank
+    for png_path in render_report.png_paths:
+        finding = check_page_not_blank(png_path)
+        assert finding is None, f"Visual: {finding.message}"
+
+    # cross-check: page aspect ratio must match A4
+    for png_path in render_report.png_paths:
+        finding = check_page_dimensions(png_path)
+        assert finding is None, f"Visual: {finding.message}"
 
 
 def test_golden_path_pipeline_artifacts_are_consistent(tmp_path: Path):

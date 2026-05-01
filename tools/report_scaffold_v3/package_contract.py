@@ -69,6 +69,8 @@ CORE_MODULES: tuple[CoreModuleSpec, ...] = (
     CoreModuleSpec("validation/style_contract.py", "tools.report_scaffold_v3.validation.style_contract", "style contract validation"),
     CoreModuleSpec("validation/image_fit.py", "tools.report_scaffold_v3.validation.image_fit", "image fit validation"),
     CoreModuleSpec("validation/override_detection.py", "tools.report_scaffold_v3.validation.override_detection", "override detection"),
+    CoreModuleSpec("visual_audit.py", "tools.report_scaffold_v3.visual_audit", "visual audit renderer"),
+    CoreModuleSpec("visual_audit_checks.py", "tools.report_scaffold_v3.visual_audit_checks", "visual audit deterministic checks"),
     CoreModuleSpec("workspace_runtime.py", "tools.report_scaffold_v3.workspace_runtime", "OfficeX workspace runtime"),
     CoreModuleSpec("writer.py", "tools.report_scaffold_v3.writer", "rule-driven docx writer"),
 )

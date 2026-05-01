@@ -655,3 +655,21 @@ class ValidationReport(BaseModel):
     source_docx: Path
     summary: dict
     findings: list[ValidationFinding] = Field(default_factory=list)
+
+
+class VisualAuditFinding(BaseModel):
+    severity: Literal["info", "warning", "error"]
+    code: str
+    page: int
+    message: str
+
+
+class VisualRenderReport(BaseModel):
+    docx_path: Path
+    output_dir: Path
+    status: Literal["pass", "warning", "renderer_unavailable", "render_failed"]
+    page_count: int = 0
+    png_paths: list[Path] = Field(default_factory=list)
+    renderer_name: str = ""
+    renderer_version: str = ""
+    findings: list[VisualAuditFinding] = Field(default_factory=list)
