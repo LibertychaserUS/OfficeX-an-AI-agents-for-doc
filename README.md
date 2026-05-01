@@ -4,18 +4,95 @@
 
 [中文文档 / Chinese Documentation](README_CN.md)
 
-## What It Does
+---
+
+## What is OfficeX?
+
+OfficeX is an **AI agent platform** whose first vertical is document operations. It solves a fundamental problem: when AI generates large documents directly through Python, the results suffer from layout issues, style drift, broken pagination, and table overflow — problems invisible to text/XML inspection.
+
+OfficeX separates concerns:
+- **AI** generates content (text, structure, review findings)
+- **Deterministic program code** owns document structure (styles, layout, numbering, page geometry)
+- **Dual-track verification** (structural + visual) proves the output is correct
+
+The platform is designed to be extended with **Skills** for different document scenarios. The current MVP validates the full pipeline using academic document generation as the test case.
+
+## Workflow
 
 ```
-Your prompt  -->  AI generates content  -->  OfficeX builds .docx  -->  Structural + Visual QA  -->  Verified document
+                    ┌─────────────────────┐
+                    │   User / Agent       │
+                    │   provides prompt    │
+                    └─────────┬───────────┘
+                              │
+                    ┌─────────▼───────────┐
+                    │   AI Provider        │
+                    │   generates content  │
+                    │   as structured JSON │
+                    └─────────┬───────────┘
+                              │
+                    ┌─────────▼───────────┐
+                    │   Build Source       │
+                    │   manifest-driven    │
+                    │   block assembly     │
+                    └─────────┬───────────┘
+                              │
+                    ┌─────────▼───────────┐
+                    │   Writer             │
+                    │   deterministic docx │
+                    │   generation         │
+                    └─────────┬───────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              │                               │
+    ┌─────────▼─────────┐          ┌──────────▼──────────┐
+    │ Structural         │          │ Visual               │
+    │ Validation         │          │ Audit                │
+    │ - page geometry    │          │ - LibreOffice render │
+    │ - style contract   │          │ - blank page check   │
+    │ - image fit        │          │ - aspect ratio       │
+    │ - override detect  │          │ - white gap detect   │
+    └─────────┬─────────┘          └──────────┬──────────┘
+              │                               │
+              └───────────────┬───────────────┘
+                              │
+                    ┌─────────▼───────────┐
+                    │   Both pass?         │
+                    │   → Verified .docx   │
+                    │   + page PNGs        │
+                    └─────────────────────┘
 ```
 
-OfficeX turns document creation into an engineered pipeline:
+## Architecture
 
-- **Generate**: Give it a prompt, get a properly formatted Word document
-- **Validate**: Structural checks (styles, fonts, page geometry, image fit)
-- **Visual Audit**: Renders to PNG via LibreOffice, checks for blank pages, layout gaps, aspect ratio issues
-- **Deterministic**: Same input always produces same output. AI generates content, but program code owns document structure
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Surface Layer                                               │
+│  CLI (officex commands)  |  Skill interface (--as-json)      │
+├─────────────────────────────────────────────────────────────┤
+│  Contract Layer                                              │
+│  manifests/  (baseline, write_contract, template_profile,    │
+│              layout_contract, provider_catalog, agent_catalog)│
+│  All behavior driven by declarative manifests                │
+├─────────────────────────────────────────────────────────────┤
+│  Execution Layer                                             │
+│  manifest_loader → section_assembler → writer → docx         │
+│  AI generates content; program code owns structure           │
+├─────────────────────────────────────────────────────────────┤
+│  Verification Layer                                          │
+│  Structural: validation/ (page_setup, style, image, override)│
+│  Visual: LibreOffice headless → PNG → Pillow checks          │
+├─────────────────────────────────────────────────────────────┤
+│  Runtime Layer                                               │
+│  provider_adapter (OpenAI-compatible dispatch)               │
+│  prompt_runtime (role composition + cognition layer)         │
+│  agent_runtime (orchestrator, writer, validation_engineer...)│
+├─────────────────────────────────────────────────────────────┤
+│  Trace Layer                                                 │
+│  Checkpoints, stage history, event logs, review ledgers      │
+│  Platform-level memory for agent operations                  │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Quick Start
 
@@ -37,23 +114,9 @@ pip install -e .
 officex
 ```
 
-This shows the brand banner with auto-detected environment status:
+Auto-scans Python, LibreOffice, dependencies, and API key status.
 
-```
-╭──────────────────────────────────────────────────────────╮
-│  OfficeX  Document Operations System                      │
-│  v0.1.0  |  Python 3.11.15                                │
-╰──────────────────────────────────────────────────────────╯
-                       Environment
-┌────────────────┬────────┬────────────────────────────────┐
-│ Python         │   OK   │ 3.11.15                        │
-│ LibreOffice    │   OK   │ visual audit available         │
-│ Core deps      │   OK   │ all present                    │
-│ API key        │   --   │ set OFFICEX_PROVIDER_API_KEY   │
-└────────────────┴────────┴────────────────────────────────┘
-```
-
-### 3. Optional: Install LibreOffice (for visual audit)
+### 3. (Optional) Install LibreOffice for visual audit
 
 ```bash
 # macOS
@@ -67,7 +130,7 @@ sudo apt install libreoffice
 
 ```bash
 export OFFICEX_PROVIDER_API_KEY="your-api-key"
-export OFFICEX_PROVIDER_BASE_URL="https://your-provider/v1"  # OpenAI-compatible endpoint
+export OFFICEX_PROVIDER_BASE_URL="https://your-provider/v1"
 
 officex generate \
   --prompt "Write a project proposal for a mobile study scheduler app" \
@@ -76,7 +139,6 @@ officex generate \
 ```
 
 Output:
-
 ```
 Generated: ./my-proposal/gen-20260501-221650.docx
 Model: qwen-plus | Tokens: {'prompt_tokens': 1019, 'completion_tokens': 658, 'total_tokens': 1677}
@@ -84,94 +146,57 @@ Validation: 0 error(s), 0 warning(s)
 Visual: 1 page(s), 0 finding(s)
 ```
 
-The output directory contains:
-- `*.docx` — Final Word document
-- `ai_response.txt` — Raw AI output
-- `build_source.json` — Parsed document structure
-- `validation.json` — Structural validation report
-- `visual/page-*.png` — Rendered page images
+## Use as an AI Agent Skill
 
-## Commands Reference
+OfficeX is designed to be called by AI agents (Codex, Claude Code, Hermes, etc.) as a document operations tool.
+
+**Skill documentation:** See [`skills/SKILL.md`](skills/SKILL.md) for the complete integration guide.
+
+All commands support `--as-json` for machine-parseable output:
+
+```bash
+# Your agent calls OfficeX
+officex generate --prompt "..." --model qwen-plus --output-dir /tmp/task-123 --as-json
+
+# Parse JSON result
+# {
+#   "status": "success",
+#   "output_docx": "/tmp/task-123/gen-xxx.docx",
+#   "page_count": 3,
+#   "validation_errors": 0
+# }
+```
+
+## Commands
 
 | Command | Description |
 |---------|-------------|
-| `officex` | Show banner + environment scan |
-| `officex generate --prompt "..."` | End-to-end: prompt to verified docx |
+| `officex` | Banner + environment scan |
+| `officex generate --prompt "..."` | Prompt → AI → docx → validate → visual QA |
 | `officex doctor` | Full environment readiness check |
-| `officex audit visual --candidate-docx file.docx` | Render to PNG + visual QA |
+| `officex audit visual --candidate-docx f.docx` | Render to PNG + visual QA |
 | `officex task run-docx-mvp` | Deterministic docx from manifests |
 | `officex task apply-patch-bundle` | Apply deterministic patches |
-| `officex provider list` | List configured AI providers |
-| `officex provider build-request` | Build provider request envelope |
+| `officex provider list` | List configured providers |
 | `officex prompt show --role orchestrator` | Show composed role prompt |
 | `officex agent list` | List registered agent roles |
 | `officex trace checkpoint` | Create a trace checkpoint |
 
-All commands support `--as-json` for machine-readable output.
-
-## Use as an AI Agent Skill
-
-OfficeX is designed to be called by other AI agents (Codex, Claude Code, Hermes, etc.) as a document operations tool:
-
-```bash
-# Agent calls OfficeX to generate a document
-officex generate --prompt "..." --model qwen-plus --output-dir /tmp/task-123 --as-json
-
-# Agent calls OfficeX to validate an existing document
-officex audit visual --candidate-docx report.docx --output-dir /tmp/audit-123 --as-json
-
-# Agent reads JSON output to decide next steps
-```
-
-The `--as-json` flag ensures all output is machine-parseable. Agents can:
-1. Call `officex generate` to create documents from natural language
-2. Call `officex audit visual` to verify document quality
-3. Parse JSON results to determine success/failure
-4. Iterate: fix issues and regenerate
-
 ## Supported Providers
 
-OfficeX uses the OpenAI-compatible chat API. Any provider with a compatible endpoint works:
+Any OpenAI-compatible endpoint works:
 
-| Provider | Configuration |
-|----------|--------------|
+| Provider | Setup |
+|----------|-------|
 | OpenAI | `OFFICEX_PROVIDER_API_KEY=sk-...` |
-| Anthropic (via proxy) | `OFFICEX_PROVIDER_API_KEY=... OFFICEX_PROVIDER_BASE_URL=...` |
 | Alibaba DashScope | `OFFICEX_PROVIDER_API_KEY=sk-... OFFICEX_PROVIDER_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1` |
-| Local/self-hosted | `OFFICEX_PROVIDER_API_KEY=... OFFICEX_PROVIDER_BASE_URL=http://localhost:8080/v1` |
-
-## Architecture
-
-```
-Contract Layer    manifests/ (baseline, write_contract, template_profile, layout_contract)
-                  All behavior driven by declarative manifests, nothing hardcoded
-                       |
-Execution Layer   manifest_loader -> assembler -> writer -> docx
-                  AI generates content; deterministic code owns document structure
-                       |
-Verification      Structural: validation/ (page_setup, style, image_fit, overrides)
-                  Visual: LibreOffice headless -> PNG -> Pillow checks
-                  Both must pass for the document to be considered correct
-                       |
-Runtime Layer     provider_adapter (OpenAI-compatible dispatch)
-                  prompt_runtime (role composition with cognition layer)
-                  agent_runtime (6 runtime roles)
-                       |
-Trace Layer       Checkpoints, stage history, event logs, review ledgers
-                  Platform-level memory, not just file tracking
-```
+| Local / self-hosted | `OFFICEX_PROVIDER_API_KEY=... OFFICEX_PROVIDER_BASE_URL=http://localhost:8080/v1` |
 
 ## Development
 
 ```bash
-# Run tests
-.venv/bin/pytest -q
-
-# Run specific test
-.venv/bin/pytest tests/test_golden_path.py -v
-
-# Check package integrity
-officex doctor --as-json
+.venv/bin/pytest -q          # 183 tests
+officex doctor --as-json     # Environment check
 ```
 
 ## License

@@ -16,6 +16,20 @@ htmlcov/
 outputs/
 logs/
 locks/
+sandboxes/
 
 .officex_patch_bridge/
 .officex_review_prep/
+
+# Internal development records (kept local only)
+trace/
+references/
+corpora/
+docs/
+harnesses/
+prompts/
+imports/
+sandboxes/
+AGENTS.md
+BOUNDARY.md
+PROJECT.md
