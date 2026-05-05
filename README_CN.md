@@ -1,10 +1,128 @@
 # OfficeX
 
-**AI 驱动的文档操作平台。** 通过 CLI 生成、验证和审计 Word 文档，可独立运行或作为 AI Agent 的 Skill 使用。
+[![CI](https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc/actions/workflows/ci.yml/badge.svg)](https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+**面向 AI Agent 和人类的文档操作基础平台。** 确定性执行，三轨验证，通过 Profile 和 Skill 扩展。
 
 [English Documentation](README.md)
 
 ---
+
+## OfficeX 是什么？
+
+OfficeX 是一个**文档操作平台**——AI Agent 和人类调用它来构建、修改、验证和审计 Word 文档的可靠执行层。
+
+它**不是**聊天机器人。它**不会**试图变得智能。它是确保"智能的部分思考完之后，文档是正确的"那个环节。
+
+**核心契约：**
+- 给 OfficeX 一条结构化指令 → 它精确执行
+- 给 OfficeX 一份文档 → 它准确告诉你哪里有问题（结构、视觉、语义）
+- 给 OfficeX 一个 Profile → 它适应任何纸张、字体、样式、语言
+- 给 OfficeX 一个 Skill → 它学会新的工作流，无需改代码
+
+**解决什么问题：** AI 通过代码生成大型文档时，会出现排版漂移、样式损坏、分页异常、幽灵引用、图文错位等问题。这些问题靠文本/XML 检查完全发现不了。OfficeX 通过三轨验证捕获它们。
+
+## 架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         接口层                                   │
+│                                                                  │
+│  CLI (officex 命令)        --as-json 供机器消费                  │
+│  MCP Server (officex serve) 供 Claude Desktop / Cursor 调用      │
+│  Skill 文档 (skills/)      供 AI Agent 集成参考                  │
+├─────────────────────────────────────────────────────────────────┤
+│                        合约层                                    │
+│                                                                  │
+│  Manifest    baseline, sections, figures, build source            │
+│  Contract    write_contract, layout_contract, template_profile   │
+│  Profile     运行时可切换的纸张/字体/样式配置                     │
+│  Constitution 27 条宪法，治理所有平台行为                         │
+│                                                                  │
+│  所有行为由 manifest 驱动。无硬编码。                             │
+├─────────────────────────────────────────────────────────────────┤
+│                        执行层                                    │
+│                                                                  │
+│  Writer       段落、图片、表格、AI 代码块                        │
+│  Patch Engine 基于锚点的有界段落级变更                           │
+│  Editor       AI 驱动的 编辑→补丁→验证 循环                     │
+│  Assembler    manifest → 块组装 → writer                        │
+│  Long Gen     大纲 → 逐章生成，含穿插审查和上下文传递             │
+├─────────────────────────────────────────────────────────────────┤
+│                       验证层                                     │
+│                                                                  │
+│  轨道 1: 结构验证  页面几何、样式合约、图片适配、覆盖检测        │
+│                                                                  │
+│  轨道 2: 视觉审计  LibreOffice headless → PNG 渲染 →             │
+│                    空白页、宽高比、空白间隙检查                    │
+│                                                                  │
+│  轨道 3: 语义验证  引用↔参考文献对齐、图表编号连续性、            │
+│                    附录引用、章节交叉引用、锚点邻近度、            │
+│                    术语一致性                                     │
+│                                                                  │
+│  三条轨道都通过才算正确。每条轨道明确声明检查范围。               │
+├─────────────────────────────────────────────────────────────────┤
+│                       扩展层                                     │
+│                                                                  │
+│  Profile     officex profile create/use/list — 任意纸张、字体、  │
+│              样式体系，运行时由用户或 AI 创建                     │
+│  Skill       用户自定义工作流包（SKILL.md + 脚本）               │
+│  Criteria    自动检查规则 + AI 判断规则，按文档定义，不硬编码     │
+│  Provider    任意 OpenAI 兼容端点，环境变量配置                   │
+├─────────────────────────────────────────────────────────────────┤
+│                       追踪层                                     │
+│                                                                  │
+│  检查点、阶段历史、事件日志、审查账本                             │
+│  每个操作都留下可审计的记录                                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## 使用方式
+
+### AI Agent 调用（主要场景）
+
+AI Agent 把 OfficeX 当作工具/技能调用来执行文档操作：
+
+```bash
+# Agent 让 OfficeX 从结构化输入生成文档
+officex task run-docx-mvp --sandbox-root /tmp/run-1 --as-json
+
+# Agent 让 OfficeX 验证文档
+officex audit visual --candidate-docx report.docx --output-dir /tmp/audit --as-json
+
+# Agent 让 OfficeX 对比两个版本
+officex diff --a v1.docx --b v2.docx --output-dir /tmp/diff --as-json
+```
+
+通过 MCP 集成（Claude Desktop、Cursor 等）：
+```json
+{
+  "mcpServers": {
+    "officex": {
+      "command": "officex",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+### 人类独立使用
+
+```bash
+# 从 prompt 生成文档（OfficeX 替你调 AI）
+officex generate --prompt "写一份项目提案" --model qwen-plus
+
+# 从大纲生成长文档
+officex generate-long --outline my_outline.yml --model qwen-plus
+
+# 编辑已有文档
+officex edit --docx report.docx --instruction "扩展第三章" --model qwen-plus
+
+# 切换文档配置
+officex profile use letter_business
+```
 
 ## 分支
 
@@ -14,8 +132,6 @@
 | `dev` | 活跃开发版。可能包含未完成的功能。 |
 
 ## 开箱即用（无需 API Key）
-
-安装后立即可用的命令：
 
 ```bash
 officex                              # 品牌界面 + 环境扫描
@@ -29,14 +145,13 @@ officex audit visual --candidate-docx file.docx  # 视觉 QA（需要 LibreOffic
 
 ## AI 驱动的命令（需要 API Key）
 
-以下命令需要 OpenAI 兼容的 API Key：
-
 ```bash
 export OFFICEX_PROVIDER_API_KEY="你的 key"
 export OFFICEX_PROVIDER_BASE_URL="https://你的提供商/v1"
 
 officex generate --prompt "..."                    # 短文档
-officex generate-long --outline outlines/plan.yml  # 长文档
+officex generate-long --outline plan.yml           # 长文档
+officex edit --docx file.docx --instruction "..."  # 编辑已有文档
 ```
 
 ## 系统要求
@@ -46,100 +161,9 @@ officex generate-long --outline outlines/plan.yml  # 长文档
 | **操作系统** | macOS 10.9+（Intel）、macOS 11+（Apple Silicon）、Linux（glibc 2.28+，x86_64/aarch64） |
 | **Python** | 3.11+ |
 | **LibreOffice** | 可选。视觉审计（PNG 渲染）需要 |
-| **API Key** | 可选。AI 驱动的 `generate` 命令需要。支持任何 OpenAI 兼容端点 |
-
-> 当前不支持 Windows。所有原生依赖（pymupdf、lxml、numpy、Pillow）均提供 macOS 和 Linux 的预编译 wheel。
-
-## OfficeX 是什么？
-
-OfficeX 是一个 **AI Agent 平台**，当前的第一个垂直领域是文档操作。它解决的核心问题是：当 AI 直接通过 Python 生成大型文档时，会出现排版错位、样式漂移、分页异常、表格溢出等问题——这些问题靠文本/XML 检查根本发现不了。
-
-OfficeX 的设计原则：
-- **AI** 负责生成内容（文本、结构、审查意见）
-- **确定性程序代码** 拥有文档结构（样式、排版、编号、页面几何）
-- **双轨验证**（结构 + 视觉）证明输出正确
-
-平台通过 **Skill** 扩展来覆盖不同的文档场景。当前 MVP 使用学术文档生成作为验证测试用例。
-
-## 工作流程
-
-```
-                    ┌─────────────────────┐
-                    │   用户 / Agent       │
-                    │   提供 prompt        │
-                    └─────────┬───────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │   AI Provider        │
-                    │   生成结构化 JSON    │
-                    │   内容               │
-                    └─────────┬───────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │   Build Source       │
-                    │   manifest 驱动     │
-                    │   块组装             │
-                    └─────────┬───────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │   Writer             │
-                    │   确定性 docx       │
-                    │   生成               │
-                    └─────────┬───────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              │                               │
-    ┌─────────▼─────────┐          ┌──────────▼──────────┐
-    │  结构验证          │          │  视觉审计            │
-    │  - 页面几何        │          │  - LibreOffice 渲染  │
-    │  - 样式合约        │          │  - 空白页检测        │
-    │  - 图片适配        │          │  - 宽高比验证        │
-    │  - 覆盖检测        │          │  - 空白间隙检测      │
-    └─────────┬─────────┘          └──────────┬──────────┘
-              │                               │
-              └───────────────┬───────────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │   双轨都通过？       │
-                    │   → 验证通过的 .docx │
-                    │   + 页面 PNG 截图    │
-                    └─────────────────────┘
-```
-
-## 架构
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  表面层                                                      │
-│  CLI (officex 命令)  |  Skill 接口 (--as-json)              │
-├─────────────────────────────────────────────────────────────┤
-│  合约层                                                      │
-│  manifests/ (基线、写入合约、模板配置、布局合约、              │
-│             provider 目录、agent 目录)                       │
-│  所有行为由声明式 manifest 驱动，无硬编码                     │
-├─────────────────────────────────────────────────────────────┤
-│  执行层                                                      │
-│  manifest_loader → section_assembler → writer → docx         │
-│  AI 生成内容；程序代码拥有结构                                │
-├─────────────────────────────────────────────────────────────┤
-│  验证层                                                      │
-│  结构验证: validation/ (page_setup, style, image, override)  │
-│  视觉验证: LibreOffice headless → PNG → Pillow 检查          │
-├─────────────────────────────────────────────────────────────┤
-│  运行时层                                                    │
-│  provider_adapter (OpenAI 兼容调度)                          │
-│  prompt_runtime (角色组合 + 认知层)                           │
-│  agent_runtime (编排器、写入器、验证工程师...)                │
-├─────────────────────────────────────────────────────────────┤
-│  追踪层                                                      │
-│  检查点、阶段历史、事件日志、审查账本                          │
-│  Agent 操作的平台级记忆                                      │
-└─────────────────────────────────────────────────────────────┘
-```
+| **API Key** | 可选。AI 驱动的 generate/edit 命令需要。支持任何 OpenAI 兼容端点 |
 
 ## 快速开始
-
-### 1. 安装
 
 ```bash
 git clone https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc.git
@@ -149,72 +173,9 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.lock.txt
 pip install -e .
-```
 
-### 2. 检查环境
-
-```bash
-officex
-```
-
-自动扫描 Python、LibreOffice、依赖包和 API Key 状态。
-
-### 3. （可选）安装 LibreOffice 用于视觉审计
-
-```bash
-# macOS
-brew install --cask libreoffice
-
-# Ubuntu/Debian
-sudo apt install libreoffice
-```
-
-### 4. 生成文档
-
-```bash
-export OFFICEX_PROVIDER_API_KEY="你的 API Key"
-export OFFICEX_PROVIDER_BASE_URL="https://你的提供商/v1"
-
-officex generate \
-  --prompt "写一份关于移动端学习日程管理 APP 的项目提案" \
-  --model qwen-plus \
-  --output-dir ./my-proposal
-```
-
-输出：
-```
-Generated: ./my-proposal/gen-20260501-221650.docx
-Model: qwen-plus | Tokens: {'prompt_tokens': 1019, 'completion_tokens': 658, 'total_tokens': 1677}
-Validation: 0 error(s), 0 warning(s)
-Visual: 1 page(s), 0 finding(s)
-```
-
-输出目录包含：
-- `*.docx` — 最终 Word 文档
-- `ai_response.txt` — AI 原始输出
-- `build_source.json` — 解析后的文档结构
-- `validation.json` — 结构验证报告
-- `visual/page-*.png` — 渲染后的页面图片
-
-## 作为 AI Agent 的 Skill 使用
-
-OfficeX 设计为可被其他 AI Agent（Codex、Claude Code、Hermes 等）调用的文档操作工具。
-
-**Skill 文档：** 参见 [`skills/SKILL.md`](skills/SKILL.md)
-
-所有命令支持 `--as-json` 机器可读输出：
-
-```bash
-# Agent 调用 OfficeX
-officex generate --prompt "..." --model qwen-plus --output-dir /tmp/task-123 --as-json
-
-# 解析 JSON 结果
-# {
-#   "status": "success",
-#   "output_docx": "/tmp/task-123/gen-xxx.docx",
-#   "page_count": 3,
-#   "validation_errors": 0
-# }
+officex                   # 查看环境状态
+officex doctor --as-json  # 完整就绪检查
 ```
 
 ## 命令参考
@@ -222,19 +183,65 @@ officex generate --prompt "..." --model qwen-plus --output-dir /tmp/task-123 --a
 | 命令 | 说明 |
 |------|------|
 | `officex` | 品牌界面 + 环境扫描 |
-| `officex generate --prompt "..."` | Prompt → AI → docx → 验证 → 视觉QA |
-| `officex doctor` | 完整环境就绪检查 |
-| `officex audit visual --candidate-docx f.docx` | 渲染为 PNG + 视觉QA |
+| `officex init` | 初始化工作空间 |
+| `officex generate` | 短文档：prompt → AI → docx → 验证 |
+| `officex generate-long` | 长文档：大纲 → 逐章生成 → 验证 |
+| `officex edit` | AI 驱动编辑已有文档 |
+| `officex diff` | 两份文档视觉对比 |
+| `officex serve` | 启动 MCP 服务供 AI Agent 集成 |
+| `officex doctor` | 环境就绪检查 |
+| `officex audit visual` | 渲染为 PNG + 视觉 QA |
+| `officex profile list/use/create` | 管理文档配置 |
 | `officex task run-docx-mvp` | 从 manifest 确定性生成 docx |
 | `officex task apply-patch-bundle` | 应用确定性补丁 |
 | `officex provider list` | 列出已配置的 AI 提供商 |
-| `officex prompt show --role orchestrator` | 显示组合后的角色提示词 |
 | `officex agent list` | 列出已注册的 Agent 角色 |
 | `officex trace checkpoint` | 创建追踪检查点 |
 
+所有命令支持 `--as-json` 输出机器可读格式。
+
+## Profile 系统
+
+Profile 是运行时可切换的文档配置（纸张、字体、样式）：
+
+```bash
+officex profile list                    # 查看可用配置
+officex profile use letter_business     # 切换到 US Letter + Arial
+officex profile create my_custom \
+  --page-width 515.9 --page-height 728.5 \
+  --font "Yu Gothic" --font-size 10.5   # 运行时创建新配置
+```
+
+没有硬编码。用户和 AI Agent 可以为任何纸张、字体或样式体系创建新 Profile。
+
+## 三轨验证
+
+OfficeX 通过三条独立轨道验证文档：
+
+| 轨道 | 检查内容 | 方式 |
+|------|---------|------|
+| **结构验证** | 页面几何、样式合约、图片适配、覆盖检测 | python-docx 检查 |
+| **视觉审计** | 空白页、宽高比、空白间隙、排版漂移 | LibreOffice → PNG → Pillow |
+| **语义验证** | 引用对齐、编号连续性、附录引用、章节交叉引用、术语一致性 | 内容模式匹配 |
+
+文档必须三条轨道都通过才算正确。每条轨道明确声明自己的检查范围——结构检查不宣称视觉正确性，反之亦然。
+
+## 宪法
+
+OfficeX 的行为由 [CONSTITUTION.md](CONSTITUTION.md) 治理——8 个领域 27 条：
+
+1. **权威** — Manifest 是法律。层级不可逆。
+2. **执行** — 变更前沙箱隔离。声称前先验证。降级不阻断。
+3. **记忆** — 四层分层。检索只建议不决定。
+4. **交互** — 重量决定对话。不捏造关键输入。
+5. **安全** — 内容不越界。密钥不落盘。
+6. **扩展** — 配置是动态的。Skill 是自包含的。
+7. **规划** — 计划粒度匹配任务复杂度。文档读起来像一个人写的。
+8. **追踪** — 一切留痕。可重放。
+
 ## 支持的 Provider
 
-任何 OpenAI 兼容接口均可使用：
+任何 OpenAI 兼容端点：
 
 | 提供商 | 配置 |
 |--------|------|
@@ -245,7 +252,7 @@ officex generate --prompt "..." --model qwen-plus --output-dir /tmp/task-123 --a
 ## 开发
 
 ```bash
-.venv/bin/pytest -q          # 183 个测试
+.venv/bin/pytest -q          # 运行测试
 officex doctor --as-json     # 环境检查
 ```
 
