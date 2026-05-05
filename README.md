@@ -4,11 +4,129 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**AI-powered document operations platform.** Generate, validate, and audit Word documents through a CLI that works standalone or as a skill for AI agents.
+**Document operations infrastructure for AI agents and humans.** Deterministic execution, triple-track verification, extensible through profiles and skills.
 
 [中文文档 / Chinese Documentation](README_CN.md)
 
 ---
+
+## What is OfficeX?
+
+OfficeX is a **document operations platform** — the reliable execution layer that AI agents and humans call to build, modify, verify, and audit Word documents.
+
+It is **not** a chatbot. It is **not** trying to be intelligent. It is the part that makes sure the document is correct after the intelligent part is done thinking.
+
+**The core contract:**
+- You give OfficeX a structured instruction → it executes precisely
+- You give OfficeX a document → it tells you exactly what's wrong (structurally, visually, semantically)
+- You give OfficeX a profile → it adapts to any paper size, font, style, language
+- You give OfficeX a skill → it learns a new workflow without code changes
+
+**What it solves:** When AI generates large documents through code, the results suffer from layout drift, style corruption, broken pagination, phantom references, and figure-text misalignment. These problems are invisible to text/XML inspection. OfficeX catches them through triple-track verification.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Interface Layer                           │
+│                                                                  │
+│  CLI (officex commands)     --as-json for machine consumption    │
+│  MCP Server (officex serve) tools for Claude Desktop / Cursor    │
+│  Skill docs (skills/)      integration guide for AI agents       │
+├─────────────────────────────────────────────────────────────────┤
+│                       Contract Layer                             │
+│                                                                  │
+│  Manifests    baseline, sections, figures, build source           │
+│  Contracts    write_contract, layout_contract, template_profile  │
+│  Profiles     runtime-switchable paper/font/style configurations │
+│  Constitution 27 articles governing all platform behavior        │
+│                                                                  │
+│  All behavior is manifest-driven. Nothing is hardcoded.          │
+├─────────────────────────────────────────────────────────────────┤
+│                      Execution Layer                             │
+│                                                                  │
+│  Writer       paragraphs, images, tables, AI code blocks         │
+│  Patch Engine bounded paragraph-level mutations with anchors     │
+│  Editor       AI-driven edit → patch → verify cycle              │
+│  Assembler    manifest → block assembly → writer                 │
+│  Long Gen     outline → section-by-section with interleaved      │
+│               review and prior-section context                   │
+├─────────────────────────────────────────────────────────────────┤
+│                    Verification Layer                             │
+│                                                                  │
+│  Track 1: Structural   page geometry, style contract, image fit, │
+│           Validation   override detection                        │
+│                                                                  │
+│  Track 2: Visual       LibreOffice headless → PNG rendering →    │
+│           Audit        blank page, aspect ratio, white gap check │
+│                                                                  │
+│  Track 3: Semantic     citation ↔ bibliography alignment,        │
+│           Validation   figure/table numbering continuity,        │
+│                        appendix references, section cross-refs,  │
+│                        anchor proximity, terminology consistency │
+│                                                                  │
+│  All three tracks must pass. Each states its scope explicitly.   │
+├─────────────────────────────────────────────────────────────────┤
+│                     Extensibility Layer                           │
+│                                                                  │
+│  Profiles     officex profile create/use/list — any paper, font, │
+│               style system, created at runtime by users or AI    │
+│  Skills       user-defined workflow packages (SKILL.md + scripts)│
+│  Criteria     auto-checkable rules + AI-judged rules, defined    │
+│               per document, not hardcoded in platform            │
+│  Providers    any OpenAI-compatible endpoint, env-var configured │
+├─────────────────────────────────────────────────────────────────┤
+│                        Trace Layer                               │
+│                                                                  │
+│  Checkpoints, stage history, event logs, review ledgers          │
+│  Every operation leaves an auditable trail                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## How It's Used
+
+### By AI agents (primary use case)
+
+AI agents call OfficeX as a tool/skill to execute document operations:
+
+```bash
+# Agent asks OfficeX to build a document from structured input
+officex task run-docx-mvp --sandbox-root /tmp/run-1 --as-json
+
+# Agent asks OfficeX to verify a document
+officex audit visual --candidate-docx report.docx --output-dir /tmp/audit --as-json
+
+# Agent asks OfficeX to diff two versions
+officex diff --a v1.docx --b v2.docx --output-dir /tmp/diff --as-json
+```
+
+Via MCP (Claude Desktop, Cursor, etc.):
+```json
+{
+  "mcpServers": {
+    "officex": {
+      "command": "officex",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+### By humans (standalone)
+
+```bash
+# Generate a document from a prompt (OfficeX calls AI for you)
+officex generate --prompt "Write a project proposal" --model qwen-plus
+
+# Generate a long document from an outline
+officex generate-long --outline my_outline.yml --model qwen-plus
+
+# Edit an existing document
+officex edit --docx report.docx --instruction "Expand section 3" --model qwen-plus
+
+# Switch document profile
+officex profile use letter_business
+```
 
 ## Branches
 
@@ -17,30 +135,27 @@
 | `main` | Stable release. Everything here works. |
 | `dev` | Active development. May contain incomplete features. |
 
-## What Works Out of the Box (no API key needed)
-
-These commands work immediately after install:
+## What Works Out of the Box (no API key)
 
 ```bash
 officex                              # Brand banner + environment scan
 officex init                         # Create a workspace
 officex doctor --as-json             # Environment readiness check
 officex profile list                 # List document profiles
-officex profile create my_profile    # Create a new profile
+officex profile create my_profile    # Create a new profile at runtime
 officex task run-docx-mvp            # Deterministic docx from manifests
 officex audit visual --candidate-docx file.docx  # Visual QA (needs LibreOffice)
 ```
 
 ## AI-Powered Commands (needs API key)
 
-These commands require an OpenAI-compatible API key:
-
 ```bash
 export OFFICEX_PROVIDER_API_KEY="your-key"
 export OFFICEX_PROVIDER_BASE_URL="https://your-provider/v1"
 
 officex generate --prompt "..."                    # Short document
-officex generate-long --outline outlines/plan.yml  # Long document
+officex generate-long --outline plan.yml           # Long document
+officex edit --docx file.docx --instruction "..."  # Edit existing document
 ```
 
 ## System Requirements
@@ -50,101 +165,9 @@ officex generate-long --outline outlines/plan.yml  # Long document
 | **OS** | macOS 10.9+ (Intel), macOS 11+ (Apple Silicon), Linux (glibc 2.28+, x86_64/aarch64) |
 | **Python** | 3.11+ |
 | **LibreOffice** | Optional. Required for visual audit (PNG rendering) |
-| **API Key** | Optional. Required for AI-powered `generate` command. Any OpenAI-compatible endpoint |
-
-> Windows is not currently supported. All native dependencies (pymupdf, lxml, numpy, Pillow) provide wheels for macOS and Linux.
-
-## What is OfficeX?
-
-OfficeX is an **AI agent platform** whose first vertical is document operations. It solves a fundamental problem: when AI generates large documents directly through Python, the results suffer from layout issues, style drift, broken pagination, and table overflow — problems invisible to text/XML inspection.
-
-OfficeX separates concerns:
-- **AI** generates content (text, structure, review findings)
-- **Deterministic program code** owns document structure (styles, layout, numbering, page geometry)
-- **Dual-track verification** (structural + visual) proves the output is correct
-
-The platform is designed to be extended with **Skills** for different document scenarios. The current MVP validates the full pipeline using academic document generation as the test case.
-
-## Workflow
-
-```
-                    ┌─────────────────────┐
-                    │   User / Agent       │
-                    │   provides prompt    │
-                    └─────────┬───────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │   AI Provider        │
-                    │   generates content  │
-                    │   as structured JSON │
-                    └─────────┬───────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │   Build Source       │
-                    │   manifest-driven    │
-                    │   block assembly     │
-                    └─────────┬───────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │   Writer             │
-                    │   deterministic docx │
-                    │   generation         │
-                    └─────────┬───────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              │                               │
-    ┌─────────▼─────────┐          ┌──────────▼──────────┐
-    │ Structural         │          │ Visual               │
-    │ Validation         │          │ Audit                │
-    │ - page geometry    │          │ - LibreOffice render │
-    │ - style contract   │          │ - blank page check   │
-    │ - image fit        │          │ - aspect ratio       │
-    │ - override detect  │          │ - white gap detect   │
-    └─────────┬─────────┘          └──────────┬──────────┘
-              │                               │
-              └───────────────┬───────────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │   Both pass?         │
-                    │   → Verified .docx   │
-                    │   + page PNGs        │
-                    └─────────────────────┘
-```
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Surface Layer                                               │
-│  CLI (officex commands)  |  Skill interface (--as-json)      │
-├─────────────────────────────────────────────────────────────┤
-│  Contract Layer                                              │
-│  manifests/  (baseline, write_contract, template_profile,    │
-│              layout_contract, provider_catalog, agent_catalog)│
-│  All behavior driven by declarative manifests                │
-├─────────────────────────────────────────────────────────────┤
-│  Execution Layer                                             │
-│  manifest_loader → section_assembler → writer → docx         │
-│  AI generates content; program code owns structure           │
-├─────────────────────────────────────────────────────────────┤
-│  Verification Layer                                          │
-│  Structural: validation/ (page_setup, style, image, override)│
-│  Visual: LibreOffice headless → PNG → Pillow checks          │
-├─────────────────────────────────────────────────────────────┤
-│  Runtime Layer                                               │
-│  provider_adapter (OpenAI-compatible dispatch)               │
-│  prompt_runtime (role composition + cognition layer)         │
-│  agent_runtime (orchestrator, writer, validation_engineer...)│
-├─────────────────────────────────────────────────────────────┤
-│  Trace Layer                                                 │
-│  Checkpoints, stage history, event logs, review ledgers      │
-│  Platform-level memory for agent operations                  │
-└─────────────────────────────────────────────────────────────┘
-```
+| **API Key** | Optional. Required for AI-powered generate/edit commands. Any OpenAI-compatible endpoint |
 
 ## Quick Start
-
-### 1. Install
 
 ```bash
 git clone https://github.com/LibertychaserUS/OfficeX-an-AI-agents-for-doc.git
@@ -154,85 +177,75 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.lock.txt
 pip install -e .
-```
 
-### 2. Check environment
-
-```bash
-officex
-```
-
-Auto-scans Python, LibreOffice, dependencies, and API key status.
-
-### 3. (Optional) Install LibreOffice for visual audit
-
-```bash
-# macOS
-brew install --cask libreoffice
-
-# Ubuntu/Debian
-sudo apt install libreoffice
-```
-
-### 4. Generate a document
-
-```bash
-export OFFICEX_PROVIDER_API_KEY="your-api-key"
-export OFFICEX_PROVIDER_BASE_URL="https://your-provider/v1"
-
-officex generate \
-  --prompt "Write a project proposal for a mobile study scheduler app" \
-  --model qwen-plus \
-  --output-dir ./my-proposal
-```
-
-Output:
-```
-Generated: ./my-proposal/gen-20260501-221650.docx
-Model: qwen-plus | Tokens: {'prompt_tokens': 1019, 'completion_tokens': 658, 'total_tokens': 1677}
-Validation: 0 error(s), 0 warning(s)
-Visual: 1 page(s), 0 finding(s)
-```
-
-## Use as an AI Agent Skill
-
-OfficeX is designed to be called by AI agents (Codex, Claude Code, Hermes, etc.) as a document operations tool.
-
-**Skill documentation:** See [`skills/SKILL.md`](skills/SKILL.md) for the complete integration guide.
-
-All commands support `--as-json` for machine-parseable output:
-
-```bash
-# Your agent calls OfficeX
-officex generate --prompt "..." --model qwen-plus --output-dir /tmp/task-123 --as-json
-
-# Parse JSON result
-# {
-#   "status": "success",
-#   "output_docx": "/tmp/task-123/gen-xxx.docx",
-#   "page_count": 3,
-#   "validation_errors": 0
-# }
+officex                   # See environment status
+officex doctor --as-json  # Full readiness check
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `officex` | Banner + environment scan |
-| `officex generate --prompt "..."` | Prompt → AI → docx → validate → visual QA |
-| `officex doctor` | Full environment readiness check |
-| `officex audit visual --candidate-docx f.docx` | Render to PNG + visual QA |
+| `officex` | Brand banner + environment scan |
+| `officex init` | Initialize a workspace |
+| `officex generate` | Short document: prompt → AI → docx → verify |
+| `officex generate-long` | Long document: outline → section-by-section → verify |
+| `officex edit` | Edit existing document with AI |
+| `officex diff` | Visual comparison of two documents |
+| `officex serve` | Start MCP server for AI agent integration |
+| `officex doctor` | Environment readiness check |
+| `officex audit visual` | Render to PNG + visual QA |
+| `officex profile list/use/create` | Manage document profiles |
 | `officex task run-docx-mvp` | Deterministic docx from manifests |
 | `officex task apply-patch-bundle` | Apply deterministic patches |
-| `officex provider list` | List configured providers |
-| `officex prompt show --role orchestrator` | Show composed role prompt |
+| `officex provider list` | List configured AI providers |
 | `officex agent list` | List registered agent roles |
 | `officex trace checkpoint` | Create a trace checkpoint |
 
+All commands support `--as-json` for machine-readable output.
+
+## Profiles
+
+Profiles are runtime-switchable document configurations (paper, font, style):
+
+```bash
+officex profile list                    # See available profiles
+officex profile use letter_business     # Switch to US Letter + Arial
+officex profile create my_custom \
+  --page-width 515.9 --page-height 728.5 \
+  --font "Yu Gothic" --font-size 10.5   # Create new at runtime
+```
+
+Nothing is hardcoded. Users and AI agents can create new profiles for any paper size, font, or style system.
+
+## Triple-Track Verification
+
+OfficeX verifies documents through three independent tracks:
+
+| Track | What it checks | How |
+|-------|---------------|-----|
+| **Structural** | Page geometry, style contracts, image fit, override detection | python-docx inspection |
+| **Visual** | Blank pages, aspect ratio, white gaps, layout drift | LibreOffice → PNG → Pillow |
+| **Semantic** | Citation alignment, numbering continuity, appendix refs, section cross-refs, terminology | Pattern matching on content |
+
+A document is not considered correct until all three tracks pass. Each track explicitly states its scope — structural checks never claim visual correctness, and vice versa.
+
+## Constitution
+
+OfficeX behavior is governed by [CONSTITUTION.md](CONSTITUTION.md) — 27 articles across 8 domains:
+
+1. **Authority** — Manifests are law. Layers don't reach up.
+2. **Execution** — Sandbox before mutation. Verify before claiming. Degrade, don't block.
+3. **Memory** — Four-tier layered. Retrieval informs, never governs.
+4. **Interaction** — Weight determines dialogue. Never fabricate key inputs.
+5. **Security** — Content stays in boundaries. Secrets never touch disk.
+6. **Extensibility** — Configuration is dynamic. Skills are self-contained.
+7. **Planning** — Plan granularity matches complexity. Documents read like one author.
+8. **Trace** — Everything leaves a trail. Traces are replayable.
+
 ## Supported Providers
 
-Any OpenAI-compatible endpoint works:
+Any OpenAI-compatible endpoint:
 
 | Provider | Setup |
 |----------|-------|
@@ -243,7 +256,7 @@ Any OpenAI-compatible endpoint works:
 ## Development
 
 ```bash
-.venv/bin/pytest -q          # 183 tests
+.venv/bin/pytest -q          # Run tests
 officex doctor --as-json     # Environment check
 ```
 

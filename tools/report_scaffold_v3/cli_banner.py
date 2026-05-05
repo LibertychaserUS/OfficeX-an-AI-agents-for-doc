@@ -21,6 +21,8 @@ from rich.text import Text
 COMMAND_FAMILIES = [
     ("generate", "Generate a short document from a prompt"),
     ("generate-long", "Generate a long document from an outline"),
+    ("edit", "Edit an existing document with AI"),
+    ("diff", "Visual comparison of two documents"),
     ("doctor", "Full environment readiness check"),
     ("audit visual", "Render docx to PNG and run visual QA"),
     ("profile list", "List available document profiles"),
