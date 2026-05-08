@@ -49,6 +49,7 @@ class SectionPlan:
     heading: str
     requirements: str = ""
     materials: list[str] = field(default_factory=list)
+    depends_on: list[str] = field(default_factory=list)
     max_tokens: int = 2000
 
 
@@ -58,6 +59,7 @@ class DocumentPlan:
     title: str
     sections: list[SectionPlan]
     review_criteria: list[str] = field(default_factory=list)
+    review_interval: int = 3  # review every N sections
 
 
 def load_outline(outline_path: Path) -> DocumentPlan:
@@ -100,6 +102,7 @@ def load_outline(outline_path: Path) -> DocumentPlan:
             heading=s.get("heading", ""),
             requirements=s.get("requirements", ""),
             materials=materials,
+            depends_on=s.get("depends_on", []),
             max_tokens=s.get("max_tokens", 2000),
         ))
 
@@ -107,6 +110,7 @@ def load_outline(outline_path: Path) -> DocumentPlan:
         title=data.get("title", "Untitled"),
         sections=sections,
         review_criteria=data.get("review_criteria", []),
+        review_interval=data.get("review_interval", 3),
     )
 
 
@@ -118,8 +122,13 @@ def _generate_section(
     document_title: str,
     system_prompt: str,
     review_criteria: list[str],
+    prior_sections: list[dict] | None = None,
 ) -> dict:
-    """Generate content for a single section via AI."""
+    """Generate content for a single section via AI.
+
+    Constitution Article 23: later sections see all prior content
+    to maintain single-author coherence.
+    """
     materials_text = ""
     if section.materials:
         materials_text = "\n\nReference materials:\n" + "\n---\n".join(section.materials)
@@ -128,11 +137,24 @@ def _generate_section(
     if review_criteria:
         criteria_text = "\n\nReview criteria:\n" + "\n".join(f"- {c}" for c in review_criteria)
 
+    # Include prior sections as context (Article 23)
+    prior_context = ""
+    if prior_sections:
+        prior_lines = []
+        for ps in prior_sections:
+            prior_lines.append(f"## {ps['heading']}")
+            for p in ps["paragraphs"][:3]:  # limit to avoid token explosion
+                prior_lines.append(p[:200])
+        prior_context = (
+            "\n\nPreviously written sections (maintain consistency with these):\n"
+            + "\n".join(prior_lines)
+        )
+
     user_prompt = (
         f"You are writing the section '{section.heading}' of the document "
         f"titled '{document_title}'.\n\n"
         f"Requirements for this section:\n{section.requirements}\n"
-        f"{materials_text}{criteria_text}\n\n"
+        f"{materials_text}{criteria_text}{prior_context}\n\n"
         "Return ONLY a JSON object:\n"
         '{"paragraphs": ["paragraph 1 text", "paragraph 2 text", ...]}\n'
         "Write substantive, professional content. No markdown fences."
@@ -178,6 +200,64 @@ def _generate_section(
         "raw_response": text,
         "usage": usage,
     }
+
+
+def _run_interleaved_review(
+    *,
+    client,
+    model: str,
+    generated_content: list[dict],
+    review_criteria: list[str],
+    document_title: str,
+) -> dict:
+    """Review generated sections for coherence and consistency.
+
+    Constitution Article 24: review is interleaved during generation,
+    not deferred to the end.
+    """
+    content_summary = []
+    for gc in generated_content:
+        content_summary.append(f"## {gc['heading']}")
+        for p in gc["paragraphs"][:3]:
+            content_summary.append(p[:300])
+
+    criteria_text = "\n".join(f"- {c}" for c in review_criteria)
+
+    user_prompt = (
+        f"Review the following sections of '{document_title}' for coherence:\n\n"
+        + "\n".join(content_summary)
+        + f"\n\nReview criteria:\n{criteria_text}\n\n"
+        "Return a JSON object:\n"
+        '{"issues": ["issue 1", "issue 2"], "terminology_drift": [], "overall_coherence": "good|fair|poor"}\n'
+        "If no issues found, return empty lists. No markdown fences."
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a document reviewer checking for coherence, terminology consistency, and argument flow."},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.2,
+            max_tokens=500,
+        )
+        text = response.choices[0].message.content or ""
+        usage = {}
+        if response.usage:
+            usage = {
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens,
+            }
+        try:
+            data = json.loads(_extract_json_from_response(text))
+        except (json.JSONDecodeError, KeyError):
+            data = {"issues": [], "raw_response": text}
+        data["usage"] = usage
+        return data
+    except Exception as exc:
+        return {"issues": [], "error": str(exc), "usage": {}}
 
 
 def run_long_generate(
@@ -248,6 +328,8 @@ def run_long_generate(
     sections_dir = output_dir / "sections"
     sections_dir.mkdir(exist_ok=True)
 
+    generated_content: list[dict] = []  # accumulates all generated sections for context
+
     for i, section in enumerate(plan.sections):
         logger.debug("Generating section %d/%d: %s", i + 1, len(plan.sections), section.heading)
 
@@ -259,6 +341,7 @@ def run_long_generate(
                 document_title=plan.title,
                 system_prompt=system_prompt,
                 review_criteria=plan.review_criteria,
+                prior_sections=generated_content,
             )
         except Exception as exc:
             logger.error("Section %s failed: %s", section.section_id, exc)
@@ -272,6 +355,12 @@ def run_long_generate(
         for key in total_tokens:
             total_tokens[key] += result["usage"].get(key, 0)
 
+        # Track generated content for context in subsequent sections
+        generated_content.append({
+            "heading": section.heading,
+            "paragraphs": result["paragraphs"],
+        })
+
         # Save section result
         (sections_dir / f"{section.section_id}.json").write_text(
             json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8",
@@ -282,6 +371,26 @@ def run_long_generate(
         for para in result["paragraphs"]:
             if para.strip():
                 all_blocks.append({"kind": "paragraph", "role": "body", "text": para})
+
+        # Interleaved review (Constitution Article 24)
+        if (
+            plan.review_interval > 0
+            and (i + 1) % plan.review_interval == 0
+            and i + 1 < len(plan.sections)
+        ):
+            review_result = _run_interleaved_review(
+                client=client,
+                model=resolved_model,
+                generated_content=generated_content,
+                review_criteria=plan.review_criteria,
+                document_title=plan.title,
+            )
+            for key in total_tokens:
+                total_tokens[key] += review_result.get("usage", {}).get(key, 0)
+
+            (sections_dir / f"review_after_{section.section_id}.json").write_text(
+                json.dumps(review_result, ensure_ascii=False, indent=2), encoding="utf-8",
+            )
 
     # Assemble BuildSourceManifest
     output_name = f"{run_id}.docx"

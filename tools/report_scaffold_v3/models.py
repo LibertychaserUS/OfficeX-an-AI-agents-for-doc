@@ -184,12 +184,26 @@ class ImageRoleManifest(BaseModel):
     center_paragraph: bool = True
 
 
+class TableRoleManifest(BaseModel):
+    caption_role: str = "figure_caption"
+    style: str = "Table Grid"
+    header_bold: bool = True
+    header_bg_color: str = "D9E2F3"  # light blue
+    cell_margin_top_dxa: int = 80
+    cell_margin_bottom_dxa: int = 80
+    cell_margin_left_dxa: int = 120
+    cell_margin_right_dxa: int = 120
+    repeat_header_row: bool = True
+    full_width: bool = True
+
+
 class WriteContractManifest(BaseModel):
     schema_version: int = 1
     template_id: str
     default_output_strategy: dict = Field(default_factory=dict)
     paragraph_roles: dict[str, WriteRoleManifest] = Field(default_factory=dict)
     image_roles: dict[str, ImageRoleManifest] = Field(default_factory=dict)
+    table_roles: dict[str, TableRoleManifest] = Field(default_factory=dict)
     guardrails: dict = Field(default_factory=dict)
 
 
@@ -204,6 +218,30 @@ class ImageBlockSpec(BaseModel):
     role: str
     image_path: Path
     caption: str
+
+
+class TableBlockSpec(BaseModel):
+    kind: Literal["table"] = "table"
+    role: str = "table"
+    caption: str = ""
+    headers: list[str] = Field(default_factory=list)
+    rows: list[list[str]] = Field(default_factory=list)
+    column_widths: list[float] | None = None  # proportional weights, e.g. [1, 2, 1]
+
+
+class CodeBlockSpec(BaseModel):
+    """AI-generated python-docx code for custom document operations.
+
+    The code receives `document` (a python-docx Document object) and
+    may use any python-docx API to make custom changes. Executed in a
+    restricted scope — only python-docx and standard library available.
+
+    Constitution Article 3: "Users may explicitly grant AI direct access
+    to specific structural scopes when needed."
+    """
+    kind: Literal["code"] = "code"
+    description: str = ""
+    code: str = ""  # python-docx code to execute
 
 
 class BuildSourceManifest(BaseModel):

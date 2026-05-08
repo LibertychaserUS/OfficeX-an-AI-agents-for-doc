@@ -1,0 +1,102 @@
+title: "LoopMart E-Commerce Platform - Technical Design and Implementation Report"
+review_interval: 3
+
+sections:
+  - section_id: executive_summary
+    heading: "1 Executive Summary"
+    requirements: >
+      Summarize the project scope, technology choices, and key outcomes.
+      Reference the main findings from the Methodology (Section 2) and
+      Results (Section 4). Mention that detailed source code is in Appendix A
+      and wireframes in Appendix B. Keep under 300 words.
+    max_tokens: 1000
+
+  - section_id: methodology
+    heading: "2 Methodology"
+    requirements: >
+      Describe the development approach: Agile/Scrum methodology, sprint
+      structure, technology stack selection (Spring Boot, React, PostgreSQL).
+      Include Table 1 summarizing the technology stack with columns:
+      Layer, Technology, Version, Justification.
+      Reference Section 3 for architecture details.
+    max_tokens: 2000
+
+  - section_id: system_architecture
+    heading: "3 System Architecture"
+    requirements: >
+      Describe the three-tier architecture: presentation, business logic,
+      data persistence. Reference Figure 1 (system architecture diagram)
+      and Figure 2 (database ER diagram). Mention that Figure 1 shows
+      the request flow from React frontend through Spring Boot to PostgreSQL.
+      Include Table 2 with API endpoints: Method, Path, Description, Auth Required.
+      Cross-reference the technology choices from Section 2.
+    max_tokens: 2500
+
+  - section_id: implementation
+    heading: "4 Implementation and Results"
+    requirements: >
+      Detail the implementation of key features: user authentication with
+      JWT tokens, product catalog with search and filtering, shopping cart
+      with session management, order processing pipeline.
+      Reference Figure 3 (authentication flow diagram) and Figure 4
+      (order state machine diagram). Include Table 3 with test coverage:
+      Module, Unit Tests, Integration Tests, Coverage %.
+      Reference the source code in Appendix A for implementation details.
+      Cross-reference the architecture from Section 3.
+    max_tokens: 3000
+
+  - section_id: testing
+    heading: "5 Testing and Quality Assurance"
+    requirements: >
+      Describe the testing strategy: unit testing with JUnit 5, integration
+      testing with TestContainers, frontend testing with Jest and React
+      Testing Library. Reference Table 3 from Section 4 for coverage numbers.
+      Include Table 4 with defect summary: Priority, Count, Resolved, Open.
+      Reference Figure 5 (test execution timeline chart).
+      Discuss how testing informed the conclusions in Section 7.
+    max_tokens: 2000
+
+  - section_id: security
+    heading: "6 Security Analysis"
+    requirements: >
+      Analyze security measures: OWASP Top 10 compliance, input validation,
+      SQL injection prevention, XSS protection, CSRF tokens, rate limiting.
+      Include Table 5 mapping OWASP categories to implemented controls.
+      Reference the authentication flow from Section 4 (Figure 3).
+      Note that full security audit logs are in Appendix C.
+    max_tokens: 1500
+
+  - section_id: conclusion
+    heading: "7 Conclusion and Future Work"
+    requirements: >
+      Summarize achievements against initial objectives from Section 1.
+      Reference key metrics from Table 3 (test coverage) and Table 4
+      (defect resolution). Propose future enhancements: microservices
+      migration, CI/CD pipeline improvements, mobile app development.
+      All claims must be traceable to evidence in earlier sections.
+    max_tokens: 1500
+
+  - section_id: references
+    heading: "References"
+    requirements: >
+      Generate a realistic Harvard-style bibliography with at least 8
+      entries covering: Spring Boot documentation (Pivotal, 2024),
+      React documentation (Meta, 2024), PostgreSQL (PostgreSQL Global
+      Development Group, 2024), OWASP Top 10 (OWASP Foundation, 2023),
+      Agile methodology (Beck et al., 2001), software testing
+      (Myers et al., 2011), REST API design (Fielding, 2000),
+      JWT specification (Jones et al., 2015).
+      Format each entry as: Author (Year) Title. Publisher/Journal.
+    max_tokens: 1000
+
+review_criteria:
+  - "All Figure references (Figure 1-5) must appear in correct sequential order"
+  - "All Table references (Table 1-5) must appear in correct sequential order"
+  - "Cross-references to other sections must use correct section numbers"
+  - "In-text citations must match bibliography entries in References"
+  - "Appendix A, B, C references in text must be consistent"
+  - "Technical terminology must be consistent throughout"
+  - "No first person pronouns"
+  - "Maximum 5000 words total"
+  - "Professional academic tone"
+  - "All claims in Conclusion must reference evidence from earlier sections"
