@@ -62,7 +62,7 @@ from .cli_render import (
 
 app = typer.Typer(no_args_is_help=True, pretty_exceptions_show_locals=False)
 console = Console()
-officex_app = typer.Typer(no_args_is_help=True, help="OfficeX runtime commands.")
+officex_app = typer.Typer(no_args_is_help=True, help="OfficeX: deterministic Word (.docx) build, validation, audit and patch operations for AI agents and humans.")
 officex_workspace_app = typer.Typer(no_args_is_help=True, help="OfficeX workspace commands.")
 officex_sandbox_app = typer.Typer(no_args_is_help=True, help="OfficeX sandbox commands.")
 officex_task_app = typer.Typer(no_args_is_help=True, help="OfficeX task commands.")
@@ -426,6 +426,7 @@ def officex_workspace_init(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Create a workspace manifest and directory tree under the workspace root."""
     from .workspace_runtime import create_workspace
 
     try:
@@ -468,6 +469,7 @@ def officex_sandbox_create(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Create an isolated sandbox run with its own copy of the baseline template."""
     from .officex_runtime import create_docx_mvp_sandbox
 
     try:
@@ -509,6 +511,7 @@ def officex_doctor(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Check environment readiness: package integrity, paths, providers, desktop shell and a smoke build."""
     from .doctor_runtime import build_doctor_report, persist_doctor_report
 
     report = persist_doctor_report(
@@ -543,6 +546,7 @@ def officex_render_boundary(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Build short-to-long benchmark documents and record what this machine's Microsoft Word setup can verify."""
     from .render_boundary_runtime import (
         build_render_boundary_report,
         persist_render_boundary_report,
@@ -599,7 +603,9 @@ def officex_task_run_docx_mvp(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Build the bundled demo document from manifests in a new sandbox, then validate and audit it."""
     from .officex_runtime import run_docx_mvp
+    from .writer import WriteContractError
 
     try:
         report = run_docx_mvp(
@@ -612,6 +618,14 @@ def officex_task_run_docx_mvp(
         )
     except FileExistsError as exc:
         console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+    except WriteContractError as exc:
+        # e.g. the bundled demo source uses a4_academic roles while another profile is active.
+        console.print(
+            f"[red]{exc}[/red]\nThe build source `{source}` uses a paragraph role that the active "
+            "write contract does not define. Use a source written for this profile, or switch "
+            "back with `officex profile use a4_academic`.",
+        )
         raise typer.Exit(code=1) from exc
     payload = report.model_dump(mode="json")
     if as_json:
@@ -643,6 +657,7 @@ def officex_task_inspect(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Show the task packet recorded for a sandbox run."""
     from .officex_runtime import load_task_packet
 
     try:
@@ -680,6 +695,7 @@ def officex_task_build_review_ledger(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Normalize manual review findings (JSON/YAML) into an OfficeX review ledger."""
     from .review_runtime import build_review_ledger
 
     try:
@@ -721,6 +737,7 @@ def officex_task_extract_anchors(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Locate review-ledger findings in a candidate docx and write a live anchor snapshot."""
     from .review_runtime import extract_anchors_from_review_ledger
 
     try:
@@ -770,6 +787,7 @@ def officex_task_apply_patch_bundle(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Apply (or dry-run) a bounded paragraph patch bundle to a candidate docx via anchors."""
     from .patch_bridge_runtime import apply_officex_patch_bundle
 
     try:
@@ -810,6 +828,7 @@ def officex_prompt_show(
         help="Emit machine-readable JSON instead of raw prompt text.",
     ),
 ) -> None:
+    """Print the composed system prompt for an agent role."""
     from .prompt_runtime import compose_officex_prompt, list_officex_roles
 
     if role not in list_officex_roles():
@@ -846,6 +865,7 @@ def officex_provider_list(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """List AI providers from the provider catalog."""
     from .provider_runtime import load_provider_catalog_manifest
 
     catalog = load_provider_catalog_manifest(catalog_path.expanduser().resolve())
@@ -894,6 +914,7 @@ def officex_provider_show(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Show one provider's configuration and the prompt binding for a role."""
     from .provider_runtime import build_provider_prompt_binding
 
     try:
@@ -973,6 +994,7 @@ def officex_provider_build_request(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Build (without sending) the provider request envelope for a task packet."""
     from .provider_runtime import build_provider_request_envelope
 
     try:
@@ -1012,6 +1034,7 @@ def officex_agent_list(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """List agent roles from the agent catalog."""
     from .agent_runtime import load_agent_catalog_manifest
 
     catalog = load_agent_catalog_manifest(catalog_path.expanduser().resolve())
@@ -1040,6 +1063,7 @@ def officex_agent_show(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Show one agent role from the agent catalog."""
     from .agent_runtime import get_agent_entry
 
     try:
@@ -1088,6 +1112,7 @@ def officex_trace_checkpoint(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Write a trace checkpoint (title, summary, verification and follow-up lines)."""
     from .trace_runtime import create_trace_checkpoint
 
     report = create_trace_checkpoint(
@@ -1119,6 +1144,7 @@ def officex_init(
         False, "--as-json", help="Emit machine-readable JSON.",
     ),
 ) -> None:
+    """Create a working folder with outlines/, materials/ and outputs/ plus an example outline."""
     from .init_runtime import init_workspace
 
     try:
@@ -1147,6 +1173,7 @@ def officex_profile_list(
         False, "--as-json", help="Emit machine-readable JSON.",
     ),
 ) -> None:
+    """List document profiles and mark the active one."""
     from .profile_runtime import list_profiles, get_active_profile_id
 
     profiles = list_profiles()
@@ -1178,6 +1205,7 @@ def officex_profile_use(
         False, "--as-json", help="Emit machine-readable JSON.",
     ),
 ) -> None:
+    """Make a profile active by copying its contracts over the manifests/ files in this checkout."""
     from .profile_runtime import activate_profile
 
     try:
@@ -1206,6 +1234,7 @@ def officex_profile_create(
         False, "--as-json", help="Emit machine-readable JSON.",
     ),
 ) -> None:
+    """Create a new profile (page size, margins, font) under manifests/profiles/."""
     from .profile_runtime import create_profile
 
     try:
@@ -1242,6 +1271,7 @@ def officex_profile_validate(
         False, "--as-json", help="Emit machine-readable JSON.",
     ),
 ) -> None:
+    """Check that a profile's manifests are complete and consistent."""
     from .profile_runtime import validate_profile
 
     issues = validate_profile(profile_id)
@@ -1266,13 +1296,74 @@ def officex_serve() -> None:
     mcp_main()
 
 
+@officex_app.command("validate")
+def officex_validate(
+    docx: Path = typer.Option(
+        ..., "--docx", exists=True, dir_okay=False, help="Docx file to validate.",
+    ),
+    profile: Optional[str] = typer.Option(
+        None,
+        "--profile",
+        help="Profile to validate against (read-only; does not change the active profile). Defaults to the active profile.",
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None, "--output-dir", help="Also write JSON and Markdown reports to this directory.",
+    ),
+    as_json: bool = typer.Option(False, "--as-json", help="Emit machine-readable JSON."),
+) -> None:
+    """Check a docx structurally and semantically. No API key or LibreOffice needed.
+
+    Exit code 0 means no errors (warnings allowed), 1 means at least one error.
+    """
+    from .validate_runtime import run_validate
+
+    try:
+        payload = run_validate(
+            docx.expanduser().resolve(),
+            profile_id=profile,
+            output_dir=output_dir.expanduser().resolve() if output_dir else None,
+        )
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        lines = [
+            f"Validated {payload['docx_path']} against profile `{payload['profile'] or 'custom'}`: "
+            f"{payload['status'].upper()}",
+        ]
+        for track in ("structural", "semantic"):
+            report = payload[track]
+            lines.append(
+                f"{track.capitalize()}: {report['error_count']} error(s), {report['warning_count']} warning(s)"
+            )
+            for finding in report["findings"]:
+                if finding["severity"] in {"error", "warning"}:
+                    location = f" ({finding['location']})" if finding.get("location") else ""
+                    lines.append(f"  [{finding['severity'].upper()}] {finding['code']}{location}: {finding['message']}")
+        lines.append(f"Not checked: {payload['not_checked']}")
+        if payload["report_paths"]:
+            lines.append(f"Reports: {Path(payload['report_paths']['summary_json']).parent}")
+        console.print("\n".join(lines), markup=False)
+
+    if payload["error_count"]:
+        raise typer.Exit(code=1)
+
+
 @officex_app.command("diff")
 def officex_diff(
-    docx_a: Path = typer.Option(..., "--a", help="First docx file."),
-    docx_b: Path = typer.Option(..., "--b", help="Second docx file."),
+    docx_a: Path = typer.Option(..., "--a", exists=True, dir_okay=False, help="First docx file."),
+    docx_b: Path = typer.Option(..., "--b", exists=True, dir_okay=False, help="Second docx file."),
     output_dir: Path = typer.Option(..., "--output-dir", help="Output directory for diff artifacts."),
     as_json: bool = typer.Option(False, "--as-json", help="Emit machine-readable JSON."),
 ) -> None:
+    """Render two documents and compare them page by page.
+
+    Exit code 0 means no page changed, 1 means pages differ or rendering
+    failed, 2 means LibreOffice is not installed.
+    """
     from .diff_runtime import run_diff
 
     report = run_diff(
@@ -1280,12 +1371,20 @@ def officex_diff(
         docx_b=docx_b.expanduser().resolve(),
         output_dir=output_dir.expanduser().resolve(),
     )
+    if report.render_failed:
+        exit_code = 2 if report.status.endswith("renderer_unavailable") else 1
+    else:
+        exit_code = 1 if report.changed_pages > 0 else 0
 
     if as_json:
         console.print_json(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
-        if report.changed_pages > 0:
-            raise typer.Exit(code=1)
+        if exit_code:
+            raise typer.Exit(code=exit_code)
         return
+
+    if report.render_failed:
+        console.print(f"[red]{report.error}[/red]")
+        raise typer.Exit(code=exit_code)
 
     console.print(f"Compared: {report.pages_a} page(s) vs {report.pages_b} page(s)")
     console.print(f"Changed pages: {report.changed_pages}")
@@ -1293,13 +1392,16 @@ def officex_diff(
     if report.changed_pages > 0:
         for r in report.page_results:
             if r.changed:
-                console.print(f"  Page {r.page}: {r.similarity:.1%} similar → {r.diff_png_path}")
+                target = r.diff_png_path or "page missing in one document"
+                console.print(f"  Page {r.page}: {r.similarity:.1%} similar → {target}")
+    if exit_code:
+        raise typer.Exit(code=exit_code)
 
 
 @officex_app.command("edit")
 def officex_edit(
     docx: Path = typer.Option(
-        ..., "--docx", help="Path to the docx file to edit.",
+        ..., "--docx", exists=True, dir_okay=False, help="Path to the docx file to edit.",
     ),
     instruction: str = typer.Option(
         ..., "--instruction", help="What to change in the document.",
@@ -1320,6 +1422,7 @@ def officex_edit(
         False, "--as-json", help="Emit machine-readable JSON.",
     ),
 ) -> None:
+    """Edit an existing docx with AI, then validate and visually audit the result. Needs an API key."""
     from .edit_runtime import run_edit
 
     report = run_edit(
@@ -1353,6 +1456,8 @@ def officex_generate_long(
     outline: Path = typer.Option(
         ...,
         "--outline",
+        exists=True,
+        dir_okay=False,
         help="YAML outline file defining sections, requirements, and materials.",
     ),
     provider: str = typer.Option(
@@ -1386,6 +1491,7 @@ def officex_generate_long(
         help="Emit machine-readable JSON.",
     ),
 ) -> None:
+    """Generate a long document section by section from a YAML outline. Needs an API key."""
     from .long_generate_runtime import run_long_generate
 
     if profile:
@@ -1459,6 +1565,7 @@ def officex_generate(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Generate a short document from a prompt, then validate and visually audit it. Needs an API key."""
     from .generate_runtime import run_generate
 
     # If profile specified, activate it before generating
@@ -1500,6 +1607,8 @@ def officex_audit_visual(
     candidate_docx: Path = typer.Option(
         ...,
         "--candidate-docx",
+        exists=True,
+        dir_okay=False,
         help="Candidate docx to render and visually audit.",
     ),
     output_dir: Path = typer.Option(
@@ -1518,6 +1627,7 @@ def officex_audit_visual(
         help="Emit machine-readable JSON instead of a formatted summary.",
     ),
 ) -> None:
+    """Render a docx to PNG pages with LibreOffice and check for blank pages, gaps and distortion."""
     from .visual_audit import render_docx_to_png
     from .visual_audit_checks import run_visual_checks
     from .manifest_loader import load_template_profile
@@ -1528,13 +1638,15 @@ def officex_audit_visual(
         dpi=dpi,
     )
 
-    if render_report.status == "renderer_unavailable":
-        console.print("LibreOffice (soffice) not found. Visual audit requires a renderer.")
-        raise typer.Exit(code=2)
-
-    if render_report.status == "render_failed":
-        console.print("Rendering failed. Check logs for details.")
-        raise typer.Exit(code=1)
+    if render_report.status in {"renderer_unavailable", "render_failed"}:
+        unavailable = render_report.status == "renderer_unavailable"
+        if as_json:
+            console.print_json(json.dumps(render_report.model_dump(mode="json"), ensure_ascii=False, indent=2))
+        elif unavailable:
+            console.print("LibreOffice (soffice) not found. Visual audit requires a renderer.")
+        else:
+            console.print(f"Rendering failed: LibreOffice could not convert {candidate_docx} to PDF.")
+        raise typer.Exit(code=2 if unavailable else 1)
 
     # Derive aspect ratio from active template profile instead of hardcoding
     try:
@@ -1546,9 +1658,12 @@ def officex_audit_visual(
     visual_findings = run_visual_checks(render_report.png_paths, page_setup=page_setup)
     render_report.findings = visual_findings
 
+    has_errors = any(f.severity == "error" for f in visual_findings)
     payload = render_report.model_dump(mode="json")
     if as_json:
         console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        if has_errors:
+            raise typer.Exit(code=1)
         return
 
     lines = [
@@ -1564,7 +1679,7 @@ def officex_audit_visual(
         lines.append("Visual audit: clean")
     console.print("\n".join(lines))
 
-    if any(f.severity == "error" for f in visual_findings):
+    if has_errors:
         raise typer.Exit(code=1)
 
 

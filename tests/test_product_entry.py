@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from tools.report_scaffold_v3 import product_entry
+
+
+def _plain(text: str) -> str:
+    """Drop ANSI colors (typer forces them under GITHUB_ACTIONS) plus rich's panel borders and wrapping."""
+    text = re.sub(r"\x1b\[[0-9;]*m", "", text)
+    return " ".join(re.sub(r"[│╭╮╰╯─]", " ", text).split())
 
 
 def test_product_entry_shows_banner_when_no_args(monkeypatch):
@@ -101,3 +108,36 @@ def test_invoke_officex_cli_propagates_integer_return_values(monkeypatch):
     exit_code = product_entry._invoke_officex_cli(["doctor", "--as-json"])
 
     assert exit_code == 3
+
+
+def test_officex_cli_reports_missing_option_without_traceback(monkeypatch, tmp_path, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "demo.docx").write_bytes(b"")
+
+    exit_code = product_entry.main(["audit", "visual", "--candidate-docx", "demo.docx"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "Missing option '--output-dir'" in _plain(captured.err)
+    assert "Traceback" not in captured.err + captured.out
+
+
+def test_officex_cli_rejects_missing_input_file(monkeypatch, tmp_path, capsys):
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = product_entry.main(
+        ["diff", "--a", "missing.docx", "--b", "missing.docx", "--output-dir", "out"]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "does not exist" in _plain(captured.err)
+    assert not (tmp_path / "out").exists()
+
+
+def test_officex_cli_reports_unknown_command(capsys):
+    exit_code = product_entry.main(["genrate"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "No such command 'genrate'" in _plain(captured.err)

@@ -12,11 +12,17 @@ from .cli import officex_app
 def _invoke_officex_cli(argv: list[str]) -> int:
     command = get_command(officex_app)
     try:
-        result = command.main(args=argv, prog_name="officex", standalone_mode=False)
+        # Standalone mode lets click/typer report usage errors (missing options,
+        # unknown commands) as a short message with exit code 2. Without it they
+        # surface as tracebacks, and newer typer releases vendor their own click,
+        # so catching click's exception classes here is not reliable.
+        result = command.main(args=argv, prog_name="officex", standalone_mode=True)
     except ClickExit as exc:
-        return int(exc.exit_code or 1)
+        return int(exc.exit_code)
     except SystemExit as exc:
         code = exc.code
+        if code is None:
+            return 0
         return code if isinstance(code, int) else 1
     return result if isinstance(result, int) else 0
 

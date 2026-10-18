@@ -23,7 +23,7 @@ classifiers = [
 dependencies = [
   "deepdiff>=8.0",
   "lxml>=6.0",
-  "mcp>=1.0",
+  "mcp>=1.2,<2",  # 1.2 adds Server(version=...); 2.x replaced the decorator API used by mcp_server.py
   "numpy>=1.24",
   "openai>=1.0",
   "packaging>=24.0",

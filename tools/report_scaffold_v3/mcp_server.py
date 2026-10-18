@@ -17,7 +17,9 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-server = Server("officex")
+from . import __version__
+
+server = Server("officex", version=__version__)
 
 
 @server.list_tools()
@@ -76,6 +78,32 @@ async def list_tools() -> list[Tool]:
             },
         ),
         Tool(
+            name="officex_validate",
+            description=(
+                "Check a Word document structurally (page setup, style contract, image fit, direct "
+                "formatting overrides) and semantically (citations vs bibliography, figure/table "
+                "numbering, appendix and section cross-references, terminology). Deterministic: no API "
+                "key or LibreOffice needed. Use officex_audit_visual for rendered-layout checks."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "docx_path": {"type": "string", "description": "Path to the docx file to validate"},
+                    "profile": {
+                        "type": "string",
+                        "description": "Profile to validate against (read-only). Defaults to the active profile.",
+                        "default": "",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Optional directory for JSON/Markdown reports",
+                        "default": "",
+                    },
+                },
+                "required": ["docx_path"],
+            },
+        ),
+        Tool(
             name="officex_diff",
             description="Visually compare two Word documents page by page.",
             inputSchema={
@@ -107,6 +135,18 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
 
 
+def _existing_file(arguments: dict, key: str) -> Path:
+    """Resolve a path argument that must point to an existing file.
+
+    Raising here makes the MCP client receive an isError result that names the
+    missing file, instead of a misleading downstream rendering failure.
+    """
+    path = Path(arguments[key]).expanduser()
+    if not path.is_file():
+        raise FileNotFoundError(f"{key}: file not found: {path}")
+    return path
+
+
 def _call_tool_sync(name: str, arguments: dict) -> dict:
     """Synchronous tool dispatch."""
     if name == "officex_generate":
@@ -124,7 +164,7 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
     if name == "officex_generate_long":
         from .long_generate_runtime import run_long_generate
         report = run_long_generate(
-            outline_path=Path(arguments["outline_path"]),
+            outline_path=_existing_file(arguments, "outline_path"),
             model_id=arguments.get("model"),
             output_dir=Path(arguments["output_dir"]) if arguments.get("output_dir") else None,
         )
@@ -133,7 +173,7 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
     if name == "officex_edit":
         from .edit_runtime import run_edit
         report = run_edit(
-            docx_path=Path(arguments["docx_path"]),
+            docx_path=_existing_file(arguments, "docx_path"),
             instruction=arguments["instruction"],
             model_id=arguments.get("model"),
         )
@@ -143,7 +183,7 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
         from .visual_audit import render_docx_to_png
         from .visual_audit_checks import run_visual_checks
         report = render_docx_to_png(
-            Path(arguments["docx_path"]),
+            _existing_file(arguments, "docx_path"),
             Path(arguments["output_dir"]),
         )
         findings = []
@@ -153,13 +193,23 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
         result["visual_findings"] = [f.model_dump(mode="json") for f in findings]
         return result
 
+    if name == "officex_validate":
+        from .validate_runtime import run_validate
+        return run_validate(
+            _existing_file(arguments, "docx_path"),
+            profile_id=arguments.get("profile") or None,
+            output_dir=Path(arguments["output_dir"]) if arguments.get("output_dir") else None,
+        )
+
     if name == "officex_diff":
         from .diff_runtime import run_diff
         report = run_diff(
-            docx_a=Path(arguments["docx_a"]),
-            docx_b=Path(arguments["docx_b"]),
+            docx_a=_existing_file(arguments, "docx_a"),
+            docx_b=_existing_file(arguments, "docx_b"),
             output_dir=Path(arguments["output_dir"]),
         )
+        if report.render_failed:
+            raise RuntimeError(report.error)
         return report.to_dict()
 
     if name == "officex_profile_list":

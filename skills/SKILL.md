@@ -4,26 +4,32 @@ Use this skill when you need to generate, validate, or audit Word (.docx) docume
 
 ## What OfficeX Can Do
 
-- **Generate documents** from natural language prompts
-- **Validate** document structure (styles, fonts, page geometry, image fit)
+- **Validate** any docx structurally (styles, fonts, page geometry, image fit, overrides) and semantically (citations, figure/table numbering, cross-references, terminology)
 - **Visual audit** by rendering to PNG and checking layout
-- **Apply patches** to existing documents deterministically
-- **Inspect** task artifacts and provider configurations
+- **Diff** two documents page by page, visually
+- **Apply patches** to existing documents deterministically, through anchors
+- **Generate and edit** documents with an AI provider (needs an API key)
 
 ## Quick Reference
 
 ```bash
-# Generate a document from a prompt
-officex generate --prompt "Write a project proposal about X" --model qwen-plus --output-dir ./output --as-json
+# Structural + semantic checks on any docx (no API key, no LibreOffice)
+officex validate --docx report.docx --as-json
 
-# Validate an existing document visually
+# Render to PNG and check the pages (needs LibreOffice)
 officex audit visual --candidate-docx report.docx --output-dir ./audit --as-json
 
-# Run the deterministic generation pipeline from manifests
+# Visual page-by-page diff of two versions (needs LibreOffice)
+officex diff --a v1.docx --b v2.docx --output-dir ./diff --as-json
+
+# Build the bundled demo document from manifests (deterministic)
 officex task run-docx-mvp --run-id my-run --sandbox-root /tmp/sandbox --as-json
 
-# Apply a patch bundle to a document
+# Apply a patch bundle to a document (dry-run by default; add --apply to write)
 officex task apply-patch-bundle --patch-bundle patch.json --candidate-docx doc.docx --anchor-snapshot anchors.json --as-json
+
+# Generate a document from a prompt (needs an API key; default model is qwen-plus)
+officex generate --prompt "Write a project proposal about X" --model qwen-plus --output-dir ./output --as-json
 
 # Check environment readiness
 officex doctor --as-json
@@ -31,22 +37,30 @@ officex doctor --as-json
 
 ## Environment Requirements
 
-- Python 3.11+
-- LibreOffice (optional, for visual audit): `brew install --cask libreoffice`
+- Python 3.11 or 3.12, installed from a clone with `pip install -r requirements.lock.txt && pip install -e .`
+- LibreOffice (optional, for `audit visual` and `diff`): `brew install --cask libreoffice` on macOS, your package manager on Linux
 - API key for AI features: `export OFFICEX_PROVIDER_API_KEY="your-key"`
-- Base URL for non-OpenAI providers: `export OFFICEX_PROVIDER_BASE_URL="https://..."`
+- Base URL for providers other than OpenAI: `export OFFICEX_PROVIDER_BASE_URL="https://..."`, and pass `--model`
 
 ## How to Integrate
 
+### As an MCP server
+
+Run `officex serve` (stdio). Point your MCP client at the absolute path of the `officex` binary in the virtualenv. Tools: `officex_validate`, `officex_audit_visual`, `officex_diff`, `officex_profile_list`, `officex_doctor`, `officex_generate`, `officex_generate_long`, `officex_edit`. A missing input file or a failed render comes back as an MCP error result.
+
 ### As a CLI tool called by your agent
 
-All commands support `--as-json` for machine-readable output. Your agent can:
+Report-producing commands support `--as-json`. Your agent can:
 
-1. Call `officex generate --prompt "..." --as-json` to create documents
+1. Call `officex generate --prompt "..." --as-json` to create documents, or build them yourself
 2. Parse the JSON response to get the output path and status
-3. Call `officex audit visual --candidate-docx <path> --as-json` to verify quality
-4. Read the PNG files to visually inspect the result
-5. If issues found, regenerate or apply patches
+3. Call `officex validate --docx <path> --as-json` for structural and semantic findings
+4. Call `officex audit visual --candidate-docx <path> --output-dir <dir> --as-json` and read the PNG files to inspect the pages
+5. If issues are found, regenerate or apply patches, then `officex diff` the versions
+
+### Exit codes
+
+For `validate`, `audit visual` and `diff`: `0` clean, `1` errors found (or pages differ, for `diff`), `2` usage error or LibreOffice missing. Usage errors print a short message on stderr, never a traceback.
 
 ### JSON output schema for `generate`
 
@@ -68,13 +82,13 @@ All commands support `--as-json` for machine-readable output. Your agent can:
 
 ### Status codes
 
-- `success` — Document generated and verified
-- `ai_failed` — AI provider call or response parsing failed
-- `build_failed` — Document construction failed
-- `validation_warnings` — Document built but has validation issues
+- `success`: document generated and verified
+- `ai_failed`: AI provider call or response parsing failed
+- `build_failed`: document construction failed
+- `validation_warnings`: document built but has validation issues
 
 ## Non-negotiable: Render Before Shipping
 
 You do not "know" a document is correct until you have rendered it to PNG and inspected the pages. Text/XML checks will miss layout defects.
 
-The `officex generate` command does this automatically. If you build documents manually, always follow up with `officex audit visual`.
+`officex generate` and `officex edit` run structural and visual checks automatically. If you build documents yourself, run `officex validate` and `officex audit visual`.

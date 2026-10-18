@@ -153,7 +153,8 @@ class AgentCatalogManifest(BaseModel):
 class TemplateProfileManifest(BaseModel):
     schema_version: int = 1
     template_id: str
-    source_template_docx: Path
+    # Optional: profiles created with `officex profile create` are not derived from a template file.
+    source_template_docx: Optional[Path] = None
     page_setup: dict = Field(default_factory=dict)
     document_defaults: dict = Field(default_factory=dict)
     style_contract: dict[str, dict] = Field(default_factory=dict)
