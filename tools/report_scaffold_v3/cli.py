@@ -1638,13 +1638,15 @@ def officex_audit_visual(
         dpi=dpi,
     )
 
-    if render_report.status == "renderer_unavailable":
-        console.print("LibreOffice (soffice) not found. Visual audit requires a renderer.")
-        raise typer.Exit(code=2)
-
-    if render_report.status == "render_failed":
-        console.print("Rendering failed. Check logs for details.")
-        raise typer.Exit(code=1)
+    if render_report.status in {"renderer_unavailable", "render_failed"}:
+        unavailable = render_report.status == "renderer_unavailable"
+        if as_json:
+            console.print_json(json.dumps(render_report.model_dump(mode="json"), ensure_ascii=False, indent=2))
+        elif unavailable:
+            console.print("LibreOffice (soffice) not found. Visual audit requires a renderer.")
+        else:
+            console.print(f"Rendering failed: LibreOffice could not convert {candidate_docx} to PDF.")
+        raise typer.Exit(code=2 if unavailable else 1)
 
     # Derive aspect ratio from active template profile instead of hardcoding
     try:
@@ -1656,9 +1658,12 @@ def officex_audit_visual(
     visual_findings = run_visual_checks(render_report.png_paths, page_setup=page_setup)
     render_report.findings = visual_findings
 
+    has_errors = any(f.severity == "error" for f in visual_findings)
     payload = render_report.model_dump(mode="json")
     if as_json:
         console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+        if has_errors:
+            raise typer.Exit(code=1)
         return
 
     lines = [
@@ -1674,7 +1679,7 @@ def officex_audit_visual(
         lines.append("Visual audit: clean")
     console.print("\n".join(lines))
 
-    if any(f.severity == "error" for f in visual_findings):
+    if has_errors:
         raise typer.Exit(code=1)
 
 
