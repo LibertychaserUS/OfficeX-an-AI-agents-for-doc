@@ -59,7 +59,8 @@ def test_run_docx_mvp_reports_role_mismatch_without_traceback(tmp_path):
         ],
     )
 
+    output = " ".join(result.stdout.split())  # rich wraps long lines at the terminal width
     assert result.exit_code == 1
-    assert "Unknown paragraph role `indented_body`" in result.stdout
-    assert "officex profile use a4_academic" in result.stdout
+    assert "Unknown paragraph role `indented_body`" in output
+    assert "officex profile use a4_academic" in output
     assert not isinstance(result.exception, ValueError)
