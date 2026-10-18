@@ -32,6 +32,7 @@ def test_mcp_server_lists_officex_tools():
         "officex_generate_long",
         "officex_edit",
         "officex_audit_visual",
+        "officex_validate",
         "officex_diff",
         "officex_profile_list",
         "officex_doctor",
@@ -75,3 +76,19 @@ def test_mcp_diff_reports_missing_docx_as_error(tmp_path):
 
     assert result.isError is True
     assert "docx_b: file not found" in result.content[0].text
+
+
+def test_mcp_validate_returns_both_tracks(tmp_path):
+    from docx import Document
+
+    docx_path = tmp_path / "doc.docx"
+    document = Document()
+    document.add_paragraph("Introduction", style="Heading 1")
+    document.add_paragraph("See Figure 1 and Figure 3.")
+    document.save(str(docx_path))
+
+    payload = _payload(_call("officex_validate", {"docx_path": str(docx_path)}))
+
+    assert payload["docx_path"] == str(docx_path.resolve())
+    assert payload["structural"]["summary"]["heading_count"] == 1
+    assert "figure-numbering-gap" in {finding["code"] for finding in payload["semantic"]["findings"]}

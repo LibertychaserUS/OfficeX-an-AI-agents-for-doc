@@ -1275,6 +1275,62 @@ def officex_serve() -> None:
     mcp_main()
 
 
+@officex_app.command("validate")
+def officex_validate(
+    docx: Path = typer.Option(
+        ..., "--docx", exists=True, dir_okay=False, help="Docx file to validate.",
+    ),
+    profile: Optional[str] = typer.Option(
+        None,
+        "--profile",
+        help="Profile to validate against (read-only; does not change the active profile). Defaults to the active profile.",
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None, "--output-dir", help="Also write JSON and Markdown reports to this directory.",
+    ),
+    as_json: bool = typer.Option(False, "--as-json", help="Emit machine-readable JSON."),
+) -> None:
+    """Check a docx structurally and semantically. No API key or LibreOffice needed.
+
+    Exit code 0 means no errors (warnings allowed), 1 means at least one error.
+    """
+    from .validate_runtime import run_validate
+
+    try:
+        payload = run_validate(
+            docx.expanduser().resolve(),
+            profile_id=profile,
+            output_dir=output_dir.expanduser().resolve() if output_dir else None,
+        )
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    if as_json:
+        console.print_json(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        lines = [
+            f"Validated {payload['docx_path']} against profile `{payload['profile'] or 'custom'}`: "
+            f"{payload['status'].upper()}",
+        ]
+        for track in ("structural", "semantic"):
+            report = payload[track]
+            lines.append(
+                f"{track.capitalize()}: {report['error_count']} error(s), {report['warning_count']} warning(s)"
+            )
+            for finding in report["findings"]:
+                if finding["severity"] in {"error", "warning"}:
+                    location = f" ({finding['location']})" if finding.get("location") else ""
+                    lines.append(f"  [{finding['severity'].upper()}] {finding['code']}{location}: {finding['message']}")
+        lines.append(f"Not checked: {payload['not_checked']}")
+        if payload["report_paths"]:
+            lines.append(f"Reports: {Path(payload['report_paths']['summary_json']).parent}")
+        console.print("\n".join(lines), markup=False)
+
+    if payload["error_count"]:
+        raise typer.Exit(code=1)
+
+
 @officex_app.command("diff")
 def officex_diff(
     docx_a: Path = typer.Option(..., "--a", exists=True, dir_okay=False, help="First docx file."),

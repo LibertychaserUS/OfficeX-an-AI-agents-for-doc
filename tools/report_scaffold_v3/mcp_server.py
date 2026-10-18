@@ -76,6 +76,32 @@ async def list_tools() -> list[Tool]:
             },
         ),
         Tool(
+            name="officex_validate",
+            description=(
+                "Check a Word document structurally (page setup, style contract, image fit, direct "
+                "formatting overrides) and semantically (citations vs bibliography, figure/table "
+                "numbering, appendix and section cross-references, terminology). Deterministic: no API "
+                "key or LibreOffice needed. Use officex_audit_visual for rendered-layout checks."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "docx_path": {"type": "string", "description": "Path to the docx file to validate"},
+                    "profile": {
+                        "type": "string",
+                        "description": "Profile to validate against (read-only). Defaults to the active profile.",
+                        "default": "",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Optional directory for JSON/Markdown reports",
+                        "default": "",
+                    },
+                },
+                "required": ["docx_path"],
+            },
+        ),
+        Tool(
             name="officex_diff",
             description="Visually compare two Word documents page by page.",
             inputSchema={
@@ -164,6 +190,14 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
         result = report.model_dump(mode="json")
         result["visual_findings"] = [f.model_dump(mode="json") for f in findings]
         return result
+
+    if name == "officex_validate":
+        from .validate_runtime import run_validate
+        return run_validate(
+            _existing_file(arguments, "docx_path"),
+            profile_id=arguments.get("profile") or None,
+            output_dir=Path(arguments["output_dir"]) if arguments.get("output_dir") else None,
+        )
 
     if name == "officex_diff":
         from .diff_runtime import run_diff

@@ -47,6 +47,8 @@ jobs:
           set -euo pipefail
           out="$RUNNER_TEMP/officex-smoke"
           officex task run-docx-mvp --sandbox-root "$out" --as-json > "$RUNNER_TEMP/run.json"
+          docx=$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['candidate_docx'])" "$RUNNER_TEMP/run.json")
+          officex validate --docx "$docx" --output-dir "$out/validate" --as-json > /dev/null
           officex profile list --as-json > /dev/null
 
   latest-deps:
