@@ -92,3 +92,12 @@ def test_mcp_validate_returns_both_tracks(tmp_path):
     assert payload["docx_path"] == str(docx_path.resolve())
     assert payload["structural"]["summary"]["heading_count"] == 1
     assert "figure-numbering-gap" in {finding["code"] for finding in payload["semantic"]["findings"]}
+
+
+def test_mcp_server_reports_officex_version():
+    from tools.report_scaffold_v3 import __version__
+
+    options = mcp_server.server.create_initialization_options()
+
+    assert options.server_name == "officex"
+    assert options.server_version == __version__

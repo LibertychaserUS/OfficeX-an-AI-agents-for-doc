@@ -17,22 +17,23 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from . import __version__
+
 
 COMMAND_FAMILIES = [
-    ("generate", "Generate a short document from a prompt"),
-    ("generate-long", "Generate a long document from an outline"),
-    ("edit", "Edit an existing document with AI"),
-    ("diff", "Visual comparison of two documents"),
-    ("doctor", "Full environment readiness check"),
-    ("audit visual", "Render docx to PNG and run visual QA"),
-    ("profile list", "List available document profiles"),
+    ("task run-docx-mvp", "Build the bundled demo docx from manifests"),
+    ("validate", "Structural + semantic checks for any docx"),
+    ("audit visual", "Render docx to PNG and run visual QA (LibreOffice)"),
+    ("diff", "Page-by-page visual comparison of two docx (LibreOffice)"),
+    ("task apply-patch-bundle", "Apply anchored paragraph patches"),
+    ("profile list", "List document profiles"),
     ("profile create", "Create a new profile at runtime"),
-    ("task run-docx-mvp", "Run deterministic docx generation pipeline"),
-    ("task apply-patch-bundle", "Apply deterministic document patches"),
-    ("provider list", "List configured providers"),
-    ("prompt show", "Display composed role prompt"),
-    ("agent list", "List registered agents"),
-    ("trace checkpoint", "Create a trace checkpoint"),
+    ("serve", "Start the MCP server for AI agents"),
+    ("init", "Create a working folder with an example outline"),
+    ("doctor", "Full environment readiness check"),
+    ("generate", "Short document from a prompt (API key)"),
+    ("generate-long", "Long document from an outline (API key)"),
+    ("edit", "Edit an existing docx with AI (API key)"),
 ]
 
 REQUIRED_PACKAGES = [
@@ -137,7 +138,7 @@ def _scan_environment() -> list[tuple[str, str, str]]:
     return items
 
 
-def render_startup_banner(*, version: str = "0.1.0") -> None:
+def render_startup_banner(*, version: str = __version__) -> None:
     """Display the OfficeX CLI brand banner with environment scan."""
     console = Console()
 

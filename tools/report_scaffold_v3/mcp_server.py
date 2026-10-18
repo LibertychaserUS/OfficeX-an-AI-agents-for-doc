@@ -17,7 +17,9 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-server = Server("officex")
+from . import __version__
+
+server = Server("officex", version=__version__)
 
 
 @server.list_tools()
