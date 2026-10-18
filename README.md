@@ -185,6 +185,7 @@ AI commands use any OpenAI-compatible endpoint, configured through environment v
 |----------|-------|
 | OpenAI | `OFFICEX_PROVIDER_API_KEY=sk-...`, then `--model gpt-4o` (or another OpenAI model) |
 | Alibaba DashScope | `OFFICEX_PROVIDER_API_KEY=sk-...` `OFFICEX_PROVIDER_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| DeepSeek | `OFFICEX_PROVIDER_API_KEY=sk-...` `OFFICEX_PROVIDER_BASE_URL=https://api.deepseek.com/v1`, then `--model deepseek-chat` |
 | Local / self-hosted | `OFFICEX_PROVIDER_API_KEY=...` `OFFICEX_PROVIDER_BASE_URL=http://localhost:8080/v1`, plus `--model <your model>` |
 
 ## System Requirements

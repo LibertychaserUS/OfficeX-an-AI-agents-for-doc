@@ -185,6 +185,7 @@ AI 命令可使用任何 OpenAI 兼容端点，通过环境变量配置。默认
 |--------|------|
 | OpenAI | `OFFICEX_PROVIDER_API_KEY=sk-...`，再加 `--model gpt-4o`（或其他 OpenAI 模型） |
 | 阿里百炼 DashScope | `OFFICEX_PROVIDER_API_KEY=sk-...` `OFFICEX_PROVIDER_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| DeepSeek | `OFFICEX_PROVIDER_API_KEY=sk-...` `OFFICEX_PROVIDER_BASE_URL=https://api.deepseek.com/v1`，再加 `--model deepseek-chat` |
 | 本地/自托管 | `OFFICEX_PROVIDER_API_KEY=...` `OFFICEX_PROVIDER_BASE_URL=http://localhost:8080/v1`，再加 `--model <你的模型>` |
 
 ## 系统要求
