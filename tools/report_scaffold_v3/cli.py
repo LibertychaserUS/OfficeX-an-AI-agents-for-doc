@@ -600,6 +600,7 @@ def officex_task_run_docx_mvp(
     ),
 ) -> None:
     from .officex_runtime import run_docx_mvp
+    from .writer import WriteContractError
 
     try:
         report = run_docx_mvp(
@@ -612,6 +613,14 @@ def officex_task_run_docx_mvp(
         )
     except FileExistsError as exc:
         console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+    except WriteContractError as exc:
+        # e.g. the bundled demo source uses a4_academic roles while another profile is active.
+        console.print(
+            f"[red]{exc}[/red]\nThe build source `{source}` uses a paragraph role that the active "
+            "write contract does not define. Use a source written for this profile, or switch "
+            "back with `officex profile use a4_academic`.",
+        )
         raise typer.Exit(code=1) from exc
     payload = report.model_dump(mode="json")
     if as_json:
