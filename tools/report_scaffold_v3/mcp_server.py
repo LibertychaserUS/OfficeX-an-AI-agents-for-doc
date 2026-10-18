@@ -172,6 +172,8 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
             docx_b=_existing_file(arguments, "docx_b"),
             output_dir=Path(arguments["output_dir"]),
         )
+        if report.render_failed:
+            raise RuntimeError(report.error)
         return report.to_dict()
 
     if name == "officex_profile_list":

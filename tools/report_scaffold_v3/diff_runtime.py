@@ -30,12 +30,17 @@ class DiffPageResult:
 class DiffReport:
     docx_a: Path
     docx_b: Path
-    status: str  # "success", "render_failed", "page_count_mismatch"
+    status: str  # "success", "page_count_mismatch", "render_failed_a: <reason>", "render_failed_b: <reason>"
     pages_a: int = 0
     pages_b: int = 0
     page_results: list[DiffPageResult] = field(default_factory=list)
     changed_pages: int = 0
-    overall_similarity: float = 1.0
+    overall_similarity: float | None = 1.0  # None when the documents could not be compared
+    error: str | None = None
+
+    @property
+    def render_failed(self) -> bool:
+        return self.status.startswith("render_failed")
 
     def to_dict(self) -> dict:
         return {
@@ -45,7 +50,10 @@ class DiffReport:
             "pages_a": self.pages_a,
             "pages_b": self.pages_b,
             "changed_pages": self.changed_pages,
-            "overall_similarity": round(self.overall_similarity, 4),
+            "overall_similarity": (
+                round(self.overall_similarity, 4) if self.overall_similarity is not None else None
+            ),
+            "error": self.error,
             "page_results": [
                 {
                     "page": r.page,
@@ -81,8 +89,9 @@ def _compare_pages(
 
     # Pixel-level comparison
     diff_mask = np.any(np.abs(img_a.astype(int) - img_b.astype(int)) > 10, axis=2)
-    similarity = 1.0 - (diff_mask.sum() / diff_mask.size)
-    changed = similarity < change_threshold
+    # Plain Python types: numpy scalars are not JSON serializable.
+    similarity = float(1.0 - (diff_mask.sum() / diff_mask.size))
+    changed = bool(similarity < change_threshold)
 
     # Create diff visualization: unchanged=gray, changed=red overlay
     diff_img = (img_a * 0.3 + img_b * 0.3).astype(np.uint8)
@@ -119,15 +128,18 @@ def run_diff(
     report_a = render_docx_to_png(docx_a, render_a_dir, dpi=dpi)
     report_b = render_docx_to_png(docx_b, render_b_dir, dpi=dpi)
 
-    if report_a.status != "pass":
+    for side, path, render_report in (("a", docx_a, report_a), ("b", docx_b, report_b)):
+        if render_report.status == "pass":
+            continue
+        if render_report.status == "renderer_unavailable":
+            error = "LibreOffice (soffice) not found; officex diff needs it to render pages."
+        else:
+            error = f"LibreOffice could not render {path}."
         return DiffReport(
             docx_a=docx_a, docx_b=docx_b,
-            status=f"render_failed_a: {report_a.status}",
-        )
-    if report_b.status != "pass":
-        return DiffReport(
-            docx_a=docx_a, docx_b=docx_b,
-            status=f"render_failed_b: {report_b.status}",
+            status=f"render_failed_{side}: {render_report.status}",
+            overall_similarity=None,
+            error=error,
         )
 
     # Compare page by page

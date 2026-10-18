@@ -1273,6 +1273,11 @@ def officex_diff(
     output_dir: Path = typer.Option(..., "--output-dir", help="Output directory for diff artifacts."),
     as_json: bool = typer.Option(False, "--as-json", help="Emit machine-readable JSON."),
 ) -> None:
+    """Render two documents and compare them page by page.
+
+    Exit code 0 means no page changed, 1 means pages differ or rendering
+    failed, 2 means LibreOffice is not installed.
+    """
     from .diff_runtime import run_diff
 
     report = run_diff(
@@ -1280,12 +1285,20 @@ def officex_diff(
         docx_b=docx_b.expanduser().resolve(),
         output_dir=output_dir.expanduser().resolve(),
     )
+    if report.render_failed:
+        exit_code = 2 if report.status.endswith("renderer_unavailable") else 1
+    else:
+        exit_code = 1 if report.changed_pages > 0 else 0
 
     if as_json:
         console.print_json(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
-        if report.changed_pages > 0:
-            raise typer.Exit(code=1)
+        if exit_code:
+            raise typer.Exit(code=exit_code)
         return
+
+    if report.render_failed:
+        console.print(f"[red]{report.error}[/red]")
+        raise typer.Exit(code=exit_code)
 
     console.print(f"Compared: {report.pages_a} page(s) vs {report.pages_b} page(s)")
     console.print(f"Changed pages: {report.changed_pages}")
@@ -1293,7 +1306,10 @@ def officex_diff(
     if report.changed_pages > 0:
         for r in report.page_results:
             if r.changed:
-                console.print(f"  Page {r.page}: {r.similarity:.1%} similar → {r.diff_png_path}")
+                target = r.diff_png_path or "page missing in one document"
+                console.print(f"  Page {r.page}: {r.similarity:.1%} similar → {target}")
+    if exit_code:
+        raise typer.Exit(code=exit_code)
 
 
 @officex_app.command("edit")
