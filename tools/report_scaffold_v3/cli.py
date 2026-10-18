@@ -1268,8 +1268,8 @@ def officex_serve() -> None:
 
 @officex_app.command("diff")
 def officex_diff(
-    docx_a: Path = typer.Option(..., "--a", help="First docx file."),
-    docx_b: Path = typer.Option(..., "--b", help="Second docx file."),
+    docx_a: Path = typer.Option(..., "--a", exists=True, dir_okay=False, help="First docx file."),
+    docx_b: Path = typer.Option(..., "--b", exists=True, dir_okay=False, help="Second docx file."),
     output_dir: Path = typer.Option(..., "--output-dir", help="Output directory for diff artifacts."),
     as_json: bool = typer.Option(False, "--as-json", help="Emit machine-readable JSON."),
 ) -> None:
@@ -1299,7 +1299,7 @@ def officex_diff(
 @officex_app.command("edit")
 def officex_edit(
     docx: Path = typer.Option(
-        ..., "--docx", help="Path to the docx file to edit.",
+        ..., "--docx", exists=True, dir_okay=False, help="Path to the docx file to edit.",
     ),
     instruction: str = typer.Option(
         ..., "--instruction", help="What to change in the document.",
@@ -1353,6 +1353,8 @@ def officex_generate_long(
     outline: Path = typer.Option(
         ...,
         "--outline",
+        exists=True,
+        dir_okay=False,
         help="YAML outline file defining sections, requirements, and materials.",
     ),
     provider: str = typer.Option(
@@ -1500,6 +1502,8 @@ def officex_audit_visual(
     candidate_docx: Path = typer.Option(
         ...,
         "--candidate-docx",
+        exists=True,
+        dir_okay=False,
         help="Candidate docx to render and visually audit.",
     ),
     output_dir: Path = typer.Option(

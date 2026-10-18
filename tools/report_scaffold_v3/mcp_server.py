@@ -107,6 +107,18 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
 
 
+def _existing_file(arguments: dict, key: str) -> Path:
+    """Resolve a path argument that must point to an existing file.
+
+    Raising here makes the MCP client receive an isError result that names the
+    missing file, instead of a misleading downstream rendering failure.
+    """
+    path = Path(arguments[key]).expanduser()
+    if not path.is_file():
+        raise FileNotFoundError(f"{key}: file not found: {path}")
+    return path
+
+
 def _call_tool_sync(name: str, arguments: dict) -> dict:
     """Synchronous tool dispatch."""
     if name == "officex_generate":
@@ -124,7 +136,7 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
     if name == "officex_generate_long":
         from .long_generate_runtime import run_long_generate
         report = run_long_generate(
-            outline_path=Path(arguments["outline_path"]),
+            outline_path=_existing_file(arguments, "outline_path"),
             model_id=arguments.get("model"),
             output_dir=Path(arguments["output_dir"]) if arguments.get("output_dir") else None,
         )
@@ -133,7 +145,7 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
     if name == "officex_edit":
         from .edit_runtime import run_edit
         report = run_edit(
-            docx_path=Path(arguments["docx_path"]),
+            docx_path=_existing_file(arguments, "docx_path"),
             instruction=arguments["instruction"],
             model_id=arguments.get("model"),
         )
@@ -143,7 +155,7 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
         from .visual_audit import render_docx_to_png
         from .visual_audit_checks import run_visual_checks
         report = render_docx_to_png(
-            Path(arguments["docx_path"]),
+            _existing_file(arguments, "docx_path"),
             Path(arguments["output_dir"]),
         )
         findings = []
@@ -156,8 +168,8 @@ def _call_tool_sync(name: str, arguments: dict) -> dict:
     if name == "officex_diff":
         from .diff_runtime import run_diff
         report = run_diff(
-            docx_a=Path(arguments["docx_a"]),
-            docx_b=Path(arguments["docx_b"]),
+            docx_a=_existing_file(arguments, "docx_a"),
+            docx_b=_existing_file(arguments, "docx_b"),
             output_dir=Path(arguments["output_dir"]),
         )
         return report.to_dict()
