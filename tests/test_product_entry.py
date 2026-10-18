@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from tools.report_scaffold_v3 import product_entry
+
+
+def _plain(text: str) -> str:
+    """Drop ANSI colors (typer forces them under GITHUB_ACTIONS) plus rich's panel borders and wrapping."""
+    text = re.sub(r"\x1b\[[0-9;]*m", "", text)
+    return " ".join(re.sub(r"[│╭╮╰╯─]", " ", text).split())
 
 
 def test_product_entry_shows_banner_when_no_args(monkeypatch):
@@ -111,7 +118,7 @@ def test_officex_cli_reports_missing_option_without_traceback(monkeypatch, tmp_p
 
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert "Missing option '--output-dir'" in captured.err
+    assert "Missing option '--output-dir'" in _plain(captured.err)
     assert "Traceback" not in captured.err + captured.out
 
 
@@ -124,7 +131,7 @@ def test_officex_cli_rejects_missing_input_file(monkeypatch, tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert "does not exist" in captured.err
+    assert "does not exist" in _plain(captured.err)
     assert not (tmp_path / "out").exists()
 
 
@@ -133,4 +140,4 @@ def test_officex_cli_reports_unknown_command(capsys):
 
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert "No such command 'genrate'" in captured.err
+    assert "No such command 'genrate'" in _plain(captured.err)
