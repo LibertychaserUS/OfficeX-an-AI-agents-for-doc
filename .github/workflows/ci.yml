@@ -5,11 +5,17 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Weekly run so upstream dependency releases that break OfficeX surface quickly.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
 
 jobs:
   test:
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }}, locked deps)
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.11", "3.12"]
@@ -27,6 +33,38 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.lock.txt
           pip install -e .
+          pip check
+
+      - name: Run tests
+        run: pytest -q --tb=short
+
+      - name: Check package integrity
+        run: python -m tools.report_scaffold_v3.cli check-package
+
+      - name: Smoke test the officex CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/officex-smoke"
+          officex task run-docx-mvp --sandbox-root "$out" --as-json > "$RUNNER_TEMP/run.json"
+          officex profile list --as-json > /dev/null
+
+  latest-deps:
+    name: test (ubuntu-latest, py3.12, latest allowed deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install without the lock file
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pytest setuptools wheel  # wheel-build test uses --no-build-isolation
+          pip check
 
       - name: Run tests
         run: pytest -q --tb=short
